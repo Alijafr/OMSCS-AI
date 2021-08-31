@@ -33,7 +33,8 @@ class PriorityQueue(object):
         """Initialize a new Priority Queue."""
 
         self.queue = []
-
+        # counter to keep track of which element inserted first so the queue become FIFO
+        self.counter = 0 
     def pop(self):
         """
         Pop top priority node from queue.
@@ -41,7 +42,7 @@ class PriorityQueue(object):
         Returns:
             The node with the highest priority.
         """
-
+        return heapq.heappop(self.queue)
         # TODO: finish this function!
         raise NotImplementedError
 
@@ -55,7 +56,11 @@ class PriorityQueue(object):
         Args:
             node (tuple): The node to remove from the queue.
         """
-
+        #self.queue[0] = self.queue[node] # move it to the top
+        #heapq.heappop(self.queue) # remove it 
+        #heapq.heapify(self.queue) #sort it again 
+        #return self.queue
+        return heapq.heappop(node)
         raise NotImplementedError
 
     def __iter__(self):
@@ -75,8 +80,10 @@ class PriorityQueue(object):
         Args:
             node: Comparable Object to be added to the priority queue.
         """
-
+        node = (node[0],self.counter,node[1])
+        self.counter += 1
         # TODO: finish this function!
+        return heapq.heappush(self.queue,node)
         raise NotImplementedError
         
     def __contains__(self, key):
@@ -309,6 +316,7 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
 def return_your_name():
     """Return your name from this function"""
     # TODO: finish this function
+    return "Ali Alrasheed"
     raise NotImplementedError
 
 
