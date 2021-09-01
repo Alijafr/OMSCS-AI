@@ -79,7 +79,6 @@ class TestBasicSearch(unittest.TestCase):
 
         self.romania.reset_search()
         path = breadth_first_search(self.romania, start, goal)
-
         self.assertEqual(['a', 's', 'f', 'b', 'u'], path)   # Check for correct path
 
         explored_nodes = sum(list(self.romania.explored_nodes().values()))

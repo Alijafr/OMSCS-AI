@@ -9,6 +9,7 @@ import heapq
 import os
 import pickle
 import math
+from typing import Counter
 
 
 class PriorityQueue(object):
@@ -154,6 +155,45 @@ def breadth_first_search(graph, start, goal):
     """
 
     # TODO: finish this function!
+    if start == goal:
+        return []
+    frontier = PriorityQueue()
+    explored = set(start)
+    current_node = None
+    priority  = 0
+    frontier.append((priority,start))
+    found_path = False
+    branch = {}
+    
+    while frontier:
+        current_node = frontier.pop() 
+        priority +=1
+        # print(graph[current_node])
+        for neighbour in sorted(graph.neighbors(current_node[2])): #the queue is structured as (priority, counter,node)
+            if neighbour not in frontier and neighbour not in explored:
+                explored.add(neighbour)
+                if neighbour == goal:
+                    found_path = True 
+            
+                else:
+                    frontier.append((priority, neighbour))
+                
+                branch [neighbour] = current_node[2] #add the parent branch
+        
+        if found_path:
+            n = goal
+            path = []
+            path.append(goal)
+            while branch[n] != start:
+                path.append(branch[n])
+                n = branch[n]
+            path.append(branch[n]) #append the start
+            path.reverse()
+            return path
+
+    return "no path found"
+
+
     raise NotImplementedError
 
 
