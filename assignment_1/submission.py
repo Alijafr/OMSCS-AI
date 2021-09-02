@@ -287,6 +287,9 @@ def euclidean_dist_heuristic(graph, v, goal):
     """
 
     # TODO: finish this function!
+    goal_pos = graph.nodes[goal]['pos']
+    v_pos = graph.nodes[v]['pos']
+    return ((goal_pos[0]-v_pos[0])**2 + (goal_pos[1]-v_pos[1])**2)**0.5
     raise NotImplementedError
 
 
@@ -308,6 +311,50 @@ def a_star(graph, start, goal, heuristic=euclidean_dist_heuristic):
     """
 
     # TODO: finish this function!
+    if start == goal:
+        return []
+    frontier = PriorityQueue()
+    explored = set(start)
+    current_node = None
+    frontier.append((0.0,start))
+    found_path = False
+    branch = {}
+    
+    while frontier:
+        current_cost, _ , current_node = frontier.pop() 
+        if current_node == goal:   
+            found_path = True
+        
+        explored.add(current_node)
+        # print(graph[current_node])
+        for neighbour in sorted(graph.neighbors(current_node)): #the queue is structured as (priority, counter,node)
+            neighbour_cost = graph.get_edge_weight(current_node,neighbour)
+            cost_total = current_cost + neighbour_cost
+            h = euclidean_dist_heuristic (graph,neighbour,goal)
+            f = cost_total + h 
+            if neighbour not in frontier and neighbour not in explored:
+                frontier.append((f, neighbour))
+                branch [neighbour] = (cost_total, current_node) #add the parent branch
+                
+            elif neighbour in frontier and f < (branch[neighbour][0]+h):
+                #how to remove while not knowing the counter number?
+                frontier.append((f,neighbour))#is it okay to add without removing
+                branch [neighbour] = (cost_total, current_node) #add the parent branch 
+            
+            if found_path:
+                n = goal
+                path = []
+                path.append(goal)
+                while branch[n][1] != start:
+                    path.append(branch[n][1])
+                    n = branch[n][1]
+                path.append(branch[n][1]) #append the start
+                path.reverse()
+                return path
+
+        
+
+    return "no path found"
     raise NotImplementedError
 
 
