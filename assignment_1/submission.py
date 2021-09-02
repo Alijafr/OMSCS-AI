@@ -81,8 +81,9 @@ class PriorityQueue(object):
         Args:
             node: Comparable Object to be added to the priority queue.
         """
-        node = (node[0],self.counter,node[1])
         self.counter += 1
+        node = (node[0],self.counter,node[1])
+        
         # TODO: finish this function!
         return heapq.heappush(self.queue,node)
         raise NotImplementedError
@@ -213,6 +214,44 @@ def uniform_cost_search(graph, start, goal):
     """
 
     # TODO: finish this function!
+    if start == goal:
+        return []
+    frontier = PriorityQueue()
+    explored = set(start)
+    current_node = None
+    frontier.append((0,start))
+    branch = {}
+    
+    while frontier:
+        current_cost, _ , current_node = frontier.pop() 
+        if current_node == goal:   
+            n = goal
+            path = []
+            path.append(goal)
+            while branch[n][1] != start:
+                path.append(branch[n][1])
+                n = branch[n][1]
+            path.append(branch[n][1]) #append the start
+            path.reverse()
+            return path
+
+        
+        explored.add(current_node)
+        # print(graph[current_node])
+        for neighbour in sorted(graph.neighbors(current_node)): #the queue is structured as (priority, counter,node)
+            neighbour_cost = graph.get_edge_weight(current_node,neighbour)
+            cost_total = current_cost + neighbour_cost
+            if neighbour not in frontier and neighbour not in explored:
+                frontier.append((cost_total, neighbour))
+                branch [neighbour] = (cost_total, current_node) #add the parent branch
+                
+            elif neighbour in frontier and cost_total < branch[neighbour][0]:
+                #how to remove while not knowing the counter number?
+                frontier.append((cost_total,neighbour))#is it okay to add without removing
+                branch [neighbour] = (cost_total, current_node) #add the parent branch 
+        
+
+    return "no path found"
     raise NotImplementedError
 
 
