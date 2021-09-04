@@ -9,7 +9,7 @@ import heapq
 import os
 import pickle
 import math
-from typing import Counter
+from typing import Counter, Union
 
 
 class PriorityQueue(object):
@@ -223,7 +223,11 @@ def uniform_cost_search(graph, start, goal):
     branch = {}
     
     while frontier:
-        current_cost, _ , current_node = frontier.pop() 
+        _, _ , current_node = frontier.pop() 
+        if current_node == start:
+            current_cost = 0.0
+        else:
+            current_cost = branch[current_node][0]
         if current_node == goal:   
             n = goal
             path = []
@@ -386,6 +390,152 @@ def bidirectional_ucs(graph, start, goal):
     """
 
     # TODO: finish this function!
+    # print("start: {}, goal: {}".format(start,goal))
+    if start == goal:
+        return []
+    #search from the start
+    frontier_forward = PriorityQueue()
+    explored_forward = set(start)
+    current_node_forward = None
+    frontier_forward.append((0,start))
+    branch_forward = {}
+    # branch_forward [start] = (0.0,start)
+    #searh from the goal 
+    frontier_backward = PriorityQueue()
+    explored_backward = set(goal)
+    current_node_backward = None
+    frontier_backward.append((0,goal))
+    branch_backward = {}
+    # branch_backward [goal] = (0.0,goal)
+    #Flag to to alternate between search 
+    forward_search = True
+    #flag to check if path is found
+    found_path = False
+    #intersection nodes
+    intersection_nodes = None
+    best_intersection_node = None
+    while frontier_forward or frontier_backward:
+        if forward_search:
+            _, _ , current_node_forward = frontier_forward.pop() 
+            explored_forward.add(current_node_forward)
+            if explored_backward.intersection(explored_forward):   
+                found_path = True
+                frontier_backward_set = set([x[-1] for x in frontier_backward])
+                intersection_nodes = list(explored_forward.intersection(explored_backward.union(frontier_backward_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    # if node not in branch_backward:
+                    #     print("node {} not in backward branch".format(node))
+                    # if node not in branch_forward:
+                    #     print("node {} node in forward branch".format(node))
+                    if node is start:
+                        #the cost to the from start to start is 0
+                        cost = branch_backward[node][0]
+                    elif node is goal:
+                        cost = branch_forward[node][0]
+                    else:
+                        cost = branch_forward[node][0] + branch_backward[node][0]
+                    intersections_cost.append(cost)
+                
+                best_intersection_node_index = intersections_cost.index(min(intersections_cost))
+                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                
+                break
+            
+            if current_node_forward == start:
+                current_cost_forward = 0.0
+            else:
+                current_cost_forward = branch_forward[current_node_forward][0]
+            
+
+            
+            
+            # print(graph[current_node])
+            for neighbour in sorted(graph.neighbors(current_node_forward)): #the queue is structured as (priority, counter,node)
+                neighbour_cost = graph.get_edge_weight(current_node_forward,neighbour)
+                cost_total_forward = current_cost_forward + neighbour_cost
+                if neighbour not in frontier_forward and neighbour not in explored_forward:
+                    frontier_forward.append((cost_total_forward, neighbour))
+                    branch_forward [neighbour] = (cost_total_forward, current_node_forward) #add the parent branch
+                    
+                elif neighbour in frontier_forward and cost_total_forward < branch_forward[neighbour][0]:
+                    #how to remove while not knowing the counter number?
+                    frontier_forward.append((cost_total_forward,neighbour))#is it okay to add without removing
+                    branch_forward [neighbour] = (cost_total_forward, current_node_forward) #add the parent branch 
+            #alternate to the backward search 
+            forward_search = False 
+        else:
+            _, _ , current_node_backward = frontier_backward.pop() 
+            explored_backward.add(current_node_backward)
+            if explored_backward.intersection(explored_forward):   
+                found_path = True
+                frontier_forward_set = set([x[-1] for x in frontier_forward])
+                intersection_nodes = list(explored_backward.intersection(explored_forward.union(frontier_forward_set)))
+                intersections_cost = []
+                # print(intersection_nodes)
+                for node in intersection_nodes:
+                    # print(node)
+                    # if node not in branch_backward:
+                    #     print("node {} not in backward branch".format(node))
+                    # if node not in branch_forward:
+                    #     print("node {} node in forward branch".format(node))
+                    if node is start:
+                        #the cost to the from start to start is 0
+                        cost = branch_backward[node][0]
+                    elif node is goal:
+                        cost = branch_forward[node][0]
+                    else:
+                        cost = branch_forward[node][0] + branch_backward[node][0]
+                    intersections_cost.append(cost)
+                
+                best_intersection_node_index = intersections_cost.index(min(intersections_cost))
+                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                break
+
+            if current_node_backward == goal:
+                current_cost_backward = 0.0
+            else:
+                current_cost_backward = branch_backward[current_node_backward][0]
+
+            # print(graph[current_node])
+            for neighbour in sorted(graph.neighbors(current_node_backward)): #the queue is structured as (priority, counter,node)
+                neighbour_cost = graph.get_edge_weight(current_node_backward,neighbour)
+                cost_total_backward = current_cost_backward + neighbour_cost
+                if neighbour not in frontier_backward and neighbour not in explored_backward:
+                    frontier_backward.append((cost_total_backward, neighbour))
+                    branch_backward [neighbour] = (cost_total_backward, current_node_backward) #add the parent branch
+                    
+                elif neighbour in frontier_backward and cost_total_backward < branch_backward[neighbour][0]:
+                    #how to remove while not knowing the counter number?
+                    frontier_backward.append((cost_total_backward,neighbour))#is it okay to add without removing
+                    branch_backward [neighbour] = (cost_total_backward, current_node_backward) #add the parent branch 
+            #alternate to the backward search 
+            forward_search = True 
+            
+    if found_path:
+        #back-propogate the path
+        path = []
+        n = best_intersection_node
+        path.append(n)
+        if n != start:
+            while branch_forward [n][1] != start:
+                path.append(branch_forward[n][1])
+                n = branch_forward[n][1]
+            path.append(start)
+            path.reverse()
+        n = best_intersection_node
+        if n != goal:
+            while branch_backward[n][1] != goal:
+                path.append(branch_backward[n][1])
+                n = branch_backward[n][1]
+            path.append(goal) #now path should contain path from intersection to goal 
+        # print("start: {}, goal: {}".format(start,goal))
+        # print(path)
+        return path
+
+        
+
     raise NotImplementedError
 
 
@@ -406,7 +556,140 @@ def bidirectional_a_star(graph, start, goal,
     Returns:
         The best path as a list from the start and goal nodes (including both).
     """
+    if start == goal:
+        return []
+    #search from the start
+    frontier_forward = PriorityQueue()
+    explored_forward = set(start)
+    current_node_forward = None
+    frontier_forward.append((0,start))
+    branch_forward = {}
+    #searh from the goal 
+    frontier_backward = PriorityQueue()
+    explored_backward = set(goal)
+    current_node_backward = None
+    frontier_backward.append((0,goal))
+    branch_backward = {}
 
+    #Flag to to alternate between search 
+    forward_search = True
+    #flag to check if path is found
+    found_path = False
+    #intersection nodes
+    intersection_nodes = None
+    best_intersection_node = None
+    while frontier_forward or frontier_backward:
+        if forward_search:
+            _, _ , current_node_forward = frontier_forward.pop() 
+            explored_forward.add(current_node_forward)
+            if explored_backward.intersection(explored_forward):   
+                found_path = True
+                frontier_backward_set = set([x[-1] for x in frontier_backward])
+                intersection_nodes = list(explored_forward.intersection(explored_backward.union(frontier_backward_set)))
+                intersections_cost = []
+                for node in intersection_nodes:
+                    if node is start:
+                        #the cost to the from start to start is 0
+                        cost = branch_backward[node][0]
+                    elif node is goal:
+                        cost = branch_forward[node][0]
+                    else:
+                        cost = branch_forward[node][0] + branch_backward[node][0]
+                    intersections_cost.append(cost)
+                
+                best_intersection_node_index = intersections_cost.index(min(intersections_cost))
+                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                
+                break
+            
+            if current_node_forward == start:
+                current_cost_forward = 0.0
+            else:
+                current_cost_forward = branch_forward[current_node_forward][0]
+            
+
+            
+            
+            # print(graph[current_node])
+            for neighbour in sorted(graph.neighbors(current_node_forward)): #the queue is structured as (priority, counter,node)
+                neighbour_cost = graph.get_edge_weight(current_cost_forward,neighbour)
+                cost_total_forward = current_cost_forward + neighbour_cost
+                # print("cost for {} is: {}".format(neighbour,cost_total))
+                h = heuristic(graph,neighbour,goal)
+                f = cost_total_forward + h 
+                if neighbour not in frontier_forward and neighbour not in explored_forward:
+                    frontier_forward.append((f, neighbour))
+                    branch_forward [neighbour] = (cost_total_forward, current_node_forward) #add the parent branch
+                    
+                elif neighbour in frontier_forward and cost_total_forward < branch_forward[neighbour][0]:
+                    #how to remove while not knowing the counter number?
+                    frontier_forward.append((f,neighbour))#is it okay to add without removing
+                    branch_forward [neighbour] = (cost_total_forward, current_node_forward) #add the parent branch 
+            #alternate to the backward search 
+            forward_search = False 
+        else:
+            _, _ , current_node_backward = frontier_backward.pop() 
+            explored_backward.add(current_node_backward)
+            if explored_backward.intersection(explored_forward):   
+                found_path = True
+                frontier_forward_set = set([x[-1] for x in frontier_forward])
+                intersection_nodes = list(explored_backward.intersection(explored_forward.union(frontier_forward_set)))
+                intersections_cost = []
+                for node in intersection_nodes:
+                    if node is start:
+                        #the cost to the from start to start is 0
+                        cost = branch_backward[node][0]
+                    elif node is goal:
+                        cost = branch_forward[node][0]
+                    else:
+                        cost = branch_forward[node][0] + branch_backward[node][0]
+                    intersections_cost.append(cost)
+                
+                best_intersection_node_index = intersections_cost.index(min(intersections_cost))
+                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                break
+
+            if current_node_backward == goal:
+                current_cost_backward = 0.0
+            else:
+                current_cost_backward = branch_backward[current_node_backward][0]
+
+            # print(graph[current_node])
+            for neighbour in sorted(graph.neighbors(current_node_backward)): #the queue is structured as (priority, counter,node)
+                neighbour_cost = graph.get_edge_weight(current_node_backward,neighbour)
+                cost_total_backward = current_cost_backward + neighbour_cost
+                h = heuristic(graph,neighbour,start)
+                f = cost_total_backward + h 
+                if neighbour not in frontier_backward and neighbour not in explored_backward:
+                    frontier_backward.append((f, neighbour))
+                    branch_backward [neighbour] = (cost_total_backward, current_node_backward) #add the parent branch
+                    
+                elif neighbour in frontier_backward and cost_total_backward < branch_backward[neighbour][0]:
+                    #how to remove while not knowing the counter number?
+                    frontier_backward.append((f,neighbour))#is it okay to add without removing
+                    branch_backward [neighbour] = (cost_total_backward, current_node_backward) #add the parent branch 
+            #alternate to the backward search 
+            forward_search = True 
+            
+    if found_path:
+        path = []
+        n = best_intersection_node
+        path.append(n)
+        if n != start:
+            while branch_forward [n][1] != start:
+                path.append(branch_forward[n][1])
+                n = branch_forward[n][1]
+            path.append(start)
+            path.reverse()
+        n = best_intersection_node
+        if n != goal:
+            while branch_backward[n][1] != goal:
+                path.append(branch_backward[n][1])
+                n = branch_backward[n][1]
+            path.append(goal) #now path should contain path from intersection to goal 
+        # print("start: {}, goal: {}".format(start,goal))
+        # print(path)
+        return path
     # TODO: finish this function!
     raise NotImplementedError
 
