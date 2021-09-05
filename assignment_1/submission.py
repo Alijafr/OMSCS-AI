@@ -518,6 +518,7 @@ def bidirectional_ucs(graph, start, goal):
         path = []
         n = best_intersection_node
         path.append(n)
+        #to avoid duplicate path, more check statement is added  (if the intersection is the start or end, it may result in duplicate nodes in the path)
         if n != start:
             while branch_forward [n][1] != start:
                 path.append(branch_forward[n][1])
@@ -582,6 +583,7 @@ def bidirectional_a_star(graph, start, goal,
         if forward_search:
             _, _ , current_node_forward = frontier_forward.pop() 
             explored_forward.add(current_node_forward)
+            print(explored_forward)
             if explored_backward.intersection(explored_forward):   
                 found_path = True
                 frontier_backward_set = set([x[-1] for x in frontier_backward])
@@ -612,7 +614,8 @@ def bidirectional_a_star(graph, start, goal,
             
             # print(graph[current_node])
             for neighbour in sorted(graph.neighbors(current_node_forward)): #the queue is structured as (priority, counter,node)
-                neighbour_cost = graph.get_edge_weight(current_cost_forward,neighbour)
+                neighbour_cost = graph.get_edge_weight(current_node_forward,neighbour)
+        
                 cost_total_forward = current_cost_forward + neighbour_cost
                 # print("cost for {} is: {}".format(neighbour,cost_total))
                 h = heuristic(graph,neighbour,goal)
@@ -630,6 +633,7 @@ def bidirectional_a_star(graph, start, goal,
         else:
             _, _ , current_node_backward = frontier_backward.pop() 
             explored_backward.add(current_node_backward)
+            # print(explored_backward)
             if explored_backward.intersection(explored_forward):   
                 found_path = True
                 frontier_forward_set = set([x[-1] for x in frontier_forward])
@@ -656,7 +660,10 @@ def bidirectional_a_star(graph, start, goal,
 
             # print(graph[current_node])
             for neighbour in sorted(graph.neighbors(current_node_backward)): #the queue is structured as (priority, counter,node)
-                neighbour_cost = graph.get_edge_weight(current_node_backward,neighbour)
+                try:
+                    neighbour_cost = graph.get_edge_weight(current_node_backward,neighbour)
+                except:
+                    print("[backwar]: no edge connecting {} and {}".format(current_node_backward, neighbour))
                 cost_total_backward = current_cost_backward + neighbour_cost
                 h = heuristic(graph,neighbour,start)
                 f = cost_total_backward + h 
@@ -674,7 +681,9 @@ def bidirectional_a_star(graph, start, goal,
     if found_path:
         path = []
         n = best_intersection_node
+        print(n)
         path.append(n)
+        #to avoid duplicate path, more check statement is added  (if the intersection is the start or end, it may result in duplicate nodes in the path) 
         if n != start:
             while branch_forward [n][1] != start:
                 path.append(branch_forward[n][1])
