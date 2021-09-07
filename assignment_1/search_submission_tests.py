@@ -230,6 +230,23 @@ class TestBidirectionalSearch(unittest.TestCase):
                         i += 1
                 except TypeError:
                     break_here = 0
+
+    def test_bidirectional_all (self):
+        # Test every combination until we find the one that is failing
+        for start_node in self.romania.nodes.keys():
+            for goal_node in self.romania.nodes.keys():
+                path = bidirectional_a_star(self.romania, start_node, goal_node)
+
+                i = 0
+                path_length = len(path)
+                total_cost = 0
+                try:
+                    while i < (path_length - 1):
+                        edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
+                        total_cost += edge_weight
+                        i += 1
+                except TypeError:
+                    break_here = 0
     def test_bidirectional_ucs_romania(self):
         """Test Bi-UCS and visualize"""
         start = 'o'
