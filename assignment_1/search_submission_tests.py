@@ -231,6 +231,7 @@ class TestBidirectionalSearch(unittest.TestCase):
                 except TypeError:
                     break_here = 0
 
+
     def test_bidirectional_all (self):
         # Test every combination until we find the one that is failing
         for start_node in self.romania.nodes.keys():
@@ -247,6 +248,7 @@ class TestBidirectionalSearch(unittest.TestCase):
                         i += 1
                 except TypeError:
                     break_here = 0
+
     def test_bidirectional_ucs_romania(self):
         """Test Bi-UCS and visualize"""
         start = 'o'
@@ -279,7 +281,37 @@ class TestBidirectionalSearch(unittest.TestCase):
         explored_nodes = sum(list(self.romania.explored_nodes().values()))
         # print('BiUCS explore', explored_nodes, list(self.romania.explored_nodes.values()))
         self.assertLessEqual(explored_nodes, 12)    # Compare explored nodes to reference implementation
+    # def test_Astart_all (self):
+    #     # Test every combination until we find the one that is failing
+    #     for start_node in self.romania.nodes.keys():
+    #         for goal_node in self.romania.nodes.keys():
+    #             path = bidirectional_a_star(self.romania, start_node, goal_node)
 
+    #             i = 0
+    #             path_length = len(path)
+    #             total_cost = 0
+    #             try:
+    #                 while i < (path_length - 1):
+    #                     edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
+    #                     total_cost += edge_weight
+    #                     i += 1
+    #             except TypeError:
+    #                 break_here = 0
+
+    def test_astar_romania(self):
+        """Test Bi-UCS and visualize"""
+        start = 'o'
+        goal = 'd'
+
+        node_positions = {n: self.romania.nodes[n]['pos'] for n in
+                          self.romania.nodes.keys()}
+
+        self.romania.reset_search()
+        path = bidirectional_a_star(self.romania, start, goal)
+
+        TestBasicSearch.draw_graph(self.romania, node_positions=node_positions,
+                        start=start, goal=goal, path=path,
+                        title='bi-A* blue=start, yellow=goal, green=explored')
     def test_bidirectional_a_star(self):
         """Test and generate GeoJSON for bidirectional A* search"""
         path = bidirectional_a_star(self.atlanta, '69581003', '69581000', heuristic=haversine_dist_heuristic)
