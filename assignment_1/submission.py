@@ -539,6 +539,170 @@ def bidirectional_ucs(graph, start, goal):
 
     raise NotImplementedError
 
+def bidirectional_ucs1(graph, start, goal):
+    """
+    Exercise 1: Bidirectional Search.
+
+    See README.md for exercise description.
+
+    Args:
+        graph (ExplorableGraph): Undirected graph to search.
+        start (str): Key for the start node.
+        goal (str): Key for the end node.
+
+    Returns:
+        The best path as a list from the start and goal nodes (including both).
+    """
+
+    # TODO: finish this function!
+    # print("start: {}, goal: {}".format(start,goal))
+    if start == goal:
+        return []
+    #search from the start
+    frontier_forward = PriorityQueue()
+    explored_forward = set(start)
+    current_node_forward = None
+    frontier_forward.append((0,start))
+    branch_forward = {}
+    # branch_forward [start] = (0.0,start)
+    #searh from the goal 
+    frontier_backward = PriorityQueue()
+    explored_backward = set(goal)
+    current_node_backward = None
+    frontier_backward.append((0,goal))
+    branch_backward = {}
+    # branch_backward [goal] = (0.0,goal)
+    #Flag to to alternate between search 
+    forward_search = True
+    #flag to check if path is found
+    found_path = False
+    #intersection nodes
+    intersection_nodes = None
+    best_intersection_node = None
+    while frontier_forward or frontier_backward:
+        if forward_search:
+            _, _ , current_node_forward = frontier_forward.pop() 
+            explored_forward.add(current_node_forward)
+            if explored_backward.intersection(explored_forward):   
+                found_path = True
+                frontier_backward_set = set([x[-1] for x in frontier_backward])
+                intersection_nodes = list(explored_forward.intersection(explored_backward.union(frontier_backward_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    # if node not in branch_backward:
+                    #     print("node {} not in backward branch".format(node))
+                    # if node not in branch_forward:
+                    #     print("node {} node in forward branch".format(node))
+                    if node is start:
+                        #the cost to the from start to start is 0
+                        cost = branch_backward[node][0]
+                    elif node is goal:
+                        cost = branch_forward[node][0]
+                    else:
+                        cost = branch_forward[node][0] + branch_backward[node][0]
+                    intersections_cost.append(cost)
+                
+                best_intersection_node_index = intersections_cost.index(min(intersections_cost))
+                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                
+                break
+            
+            if current_node_forward == start:
+                current_cost_forward = 0.0
+            else:
+                current_cost_forward = branch_forward[current_node_forward][0]
+            
+
+            
+            
+            # print(graph[current_node])
+            for neighbour in sorted(graph.neighbors(current_node_forward)): #the queue is structured as (priority, counter,node)
+                neighbour_cost = graph.get_edge_weight(current_node_forward,neighbour)
+                cost_total_forward = current_cost_forward + neighbour_cost
+                if neighbour not in frontier_forward and neighbour not in explored_forward:
+                    frontier_forward.append((cost_total_forward, neighbour))
+                    branch_forward [neighbour] = (cost_total_forward, current_node_forward) #add the parent branch
+                    
+                elif neighbour in frontier_forward and cost_total_forward < branch_forward[neighbour][0]:
+                    #how to remove while not knowing the counter number?
+                    frontier_forward.append((cost_total_forward,neighbour))#is it okay to add without removing
+                    branch_forward [neighbour] = (cost_total_forward, current_node_forward) #add the parent branch 
+            #alternate to the backward search 
+            forward_search = False 
+        else:
+            _, _ , current_node_backward = frontier_backward.pop() 
+            explored_backward.add(current_node_backward)
+            if explored_backward.intersection(explored_forward):   
+                found_path = True
+                frontier_forward_set = set([x[-1] for x in frontier_forward])
+                intersection_nodes = list(explored_backward.intersection(explored_forward.union(frontier_forward_set)))
+                intersections_cost = []
+                # print(intersection_nodes)
+                for node in intersection_nodes:
+                    # print(node)
+                    # if node not in branch_backward:
+                    #     print("node {} not in backward branch".format(node))
+                    # if node not in branch_forward:
+                    #     print("node {} node in forward branch".format(node))
+                    if node is start:
+                        #the cost to the from start to start is 0
+                        cost = branch_backward[node][0]
+                    elif node is goal:
+                        cost = branch_forward[node][0]
+                    else:
+                        cost = branch_forward[node][0] + branch_backward[node][0]
+                    intersections_cost.append(cost)
+                
+                best_intersection_node_index = intersections_cost.index(min(intersections_cost))
+                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                break
+
+            if current_node_backward == goal:
+                current_cost_backward = 0.0
+            else:
+                current_cost_backward = branch_backward[current_node_backward][0]
+
+            # print(graph[current_node])
+            for neighbour in sorted(graph.neighbors(current_node_backward)): #the queue is structured as (priority, counter,node)
+                neighbour_cost = graph.get_edge_weight(current_node_backward,neighbour)
+                cost_total_backward = current_cost_backward + neighbour_cost
+                if neighbour not in frontier_backward and neighbour not in explored_backward:
+                    frontier_backward.append((cost_total_backward, neighbour))
+                    branch_backward [neighbour] = (cost_total_backward, current_node_backward) #add the parent branch
+                    
+                elif neighbour in frontier_backward and cost_total_backward < branch_backward[neighbour][0]:
+                    #how to remove while not knowing the counter number?
+                    frontier_backward.append((cost_total_backward,neighbour))#is it okay to add without removing
+                    branch_backward [neighbour] = (cost_total_backward, current_node_backward) #add the parent branch 
+            #alternate to the backward search 
+            forward_search = True 
+            
+    if found_path:
+        #back-propogate the path
+        path = []
+        n = best_intersection_node
+        path.append(n)
+        #to avoid duplicate path, more check statement is added  (if the intersection is the start or end, it may result in duplicate nodes in the path)
+        if n != start:
+            while branch_forward [n][1] != start:
+                path.append(branch_forward[n][1])
+                n = branch_forward[n][1]
+            path.append(start)
+            path.reverse()
+        n = best_intersection_node
+        if n != goal:
+            while branch_backward[n][1] != goal:
+                path.append(branch_backward[n][1])
+                n = branch_backward[n][1]
+            path.append(goal) #now path should contain path from intersection to goal 
+        # print("start: {}, goal: {}".format(start,goal))
+        # print(path)
+        return path
+
+        
+
+    raise NotImplementedError
 
 def bidirectional_a_star(graph, start, goal,
                          heuristic=euclidean_dist_heuristic):
@@ -721,7 +885,7 @@ def tridirectional_search(graph, goals):
     elif  len(set(goals)) == 2:
         goals = list(set(goals))
         # print("found duplicate goals {}".format(goals))
-        return bidirectional_ucs(graph,goals[0],goals[1])
+        return bidirectional_ucs1(graph,goals[0],goals[1])
     
     #search from A 
     frontier_A = PriorityQueue()
@@ -746,21 +910,24 @@ def tridirectional_search(graph, goals):
     branch2search= 0
     #flag to check if path is found
     found_path = False
+    star_branch = None # the star branch is the first branch that intersect with both
     #intersection nodes
-    intersection_nodes = None
-    best_intersection_node = None
-
+    intersection_nodes1 = None
+    best_intersection_node1 = None
+    intersection_nodes2 = None
+    best_intersection_node2 = None
     while True:
         
         if (branch2search%3)==0:
             _, _ , current_node_A = frontier_A.pop() 
             explored_A.add(current_node_A)
-            if explored_A.intersection(explored_B) :   
+            if explored_A.intersection(explored_B) and explored_A.intersection(explored_C) :   
                 found_path = True
+                star_branch = 0
                 frontier_B_set = set([x[-1] for x in frontier_B])
-                intersection_nodes = list(explored_A.intersection(explored_B.union(frontier_B_set)))
+                intersection_nodes1 = list(explored_A.intersection(explored_B.union(frontier_B_set)))
                 intersections_cost = []
-                for node in intersection_nodes:
+                for node in intersection_nodes1:
                     if node is goals[0]:
                         #the cost to the from start to start is 0
                         cost = branch_B[node][0]
@@ -771,28 +938,25 @@ def tridirectional_search(graph, goals):
                     intersections_cost.append(cost)
                 
                 best_intersection_node_index = intersections_cost.index(min(intersections_cost))
-                best_intersection_node =intersection_nodes[best_intersection_node_index] 
-                
-                break
-            elif explored_A.intersection(explored_C):
-                found_path = True
+                best_intersection_node1 =intersection_nodes1[best_intersection_node_index] 
+
                 frontier_C_set = set([x[-1] for x in frontier_C])
-                intersection_nodes = list(explored_A.intersection(explored_C.union(frontier_C_set)))
+                intersection_nodes2 = list(explored_A.intersection(explored_C.union(frontier_C_set)))
                 intersections_cost = []
-                for node in intersection_nodes:
+                for node in intersection_nodes2:
                     if node is goals[0]:
                         #the cost to the from start to start is 0
-                        cost = branch_B[node][0]
+                        cost = branch_C[node][0]
                     elif node is goals[2]:
                         cost = branch_A[node][0]
                     else:
-                        cost = branch_A[node][0] + branch_B[node][0]
+                        cost = branch_A[node][0] + branch_C[node][0]
                     intersections_cost.append(cost)
                 
                 best_intersection_node_index = intersections_cost.index(min(intersections_cost))
-                best_intersection_node =intersection_nodes[best_intersection_node_index] 
-                
+                best_intersection_node2 =intersection_nodes2[best_intersection_node_index]   
                 break
+            
             
             if current_node_A == goals[0]:
                 current_cost_A = 0.0
@@ -820,12 +984,13 @@ def tridirectional_search(graph, goals):
         elif (branch2search%3)==1:
             _, _ , current_node_B = frontier_B.pop() 
             explored_B.add(current_node_B)
-            if explored_B.intersection(explored_A) :   
+            if explored_B.intersection(explored_A) and explored_B.intersection(explored_C) :   
                 found_path = True
+                star_branch =1
                 frontier_A_set = set([x[-1] for x in frontier_A])
-                intersection_nodes = list(explored_B.intersection(explored_A.union(frontier_A_set)))
+                intersection_nodes1 = list(explored_B.intersection(explored_A.union(frontier_A_set)))
                 intersections_cost = []
-                for node in intersection_nodes:
+                for node in intersection_nodes1:
                     if node is goals[0]:
                         #the cost to the from start to start is 0
                         cost = branch_B[node][0]
@@ -836,15 +1001,13 @@ def tridirectional_search(graph, goals):
                     intersections_cost.append(cost)
                 
                 best_intersection_node_index = intersections_cost.index(min(intersections_cost))
-                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                best_intersection_node1 =intersection_nodes1[best_intersection_node_index] 
                 
-                break
-            elif explored_B.intersection(explored_C):
-                found_path = True
+
                 frontier_C_set = set([x[-1] for x in frontier_C])
-                intersection_nodes = list(explored_B.intersection(explored_C.union(frontier_C_set)))
+                intersection_nodes2 = list(explored_B.intersection(explored_C.union(frontier_C_set)))
                 intersections_cost = []
-                for node in intersection_nodes:
+                for node in intersection_nodes2:
                     if node is goals[1]:
                         #the cost to the from start to start is 0
                         cost = branch_C[node][0]
@@ -855,7 +1018,7 @@ def tridirectional_search(graph, goals):
                     intersections_cost.append(cost)
                 
                 best_intersection_node_index = intersections_cost.index(min(intersections_cost))
-                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                best_intersection_node2 =intersection_nodes2[best_intersection_node_index] 
                 
                 break
             
@@ -884,12 +1047,13 @@ def tridirectional_search(graph, goals):
         elif (branch2search%3) ==2:
             _, _ , current_node_C = frontier_C.pop() 
             explored_C.add(current_node_C)
-            if explored_C.intersection(explored_A) :   
+            if explored_C.intersection(explored_A) and explored_C.intersection(explored_B):   
                 found_path = True
+                star_branch =2
                 frontier_A_set = set([x[-1] for x in frontier_A])
-                intersection_nodes = list(explored_C.intersection(explored_A.union(frontier_A_set)))
+                intersection_nodes1 = list(explored_C.intersection(explored_A.union(frontier_A_set)))
                 intersections_cost = []
-                for node in intersection_nodes:
+                for node in intersection_nodes1:
                     if node is goals[0]:
                         #the cost to the from start to start is 0
                         cost = branch_C[node][0]
@@ -900,15 +1064,12 @@ def tridirectional_search(graph, goals):
                     intersections_cost.append(cost)
                 
                 best_intersection_node_index = intersections_cost.index(min(intersections_cost))
-                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                best_intersection_node1 =intersection_nodes1[best_intersection_node_index] 
                 
-                break
-            elif explored_C.intersection(explored_B):
-                found_path = True
                 frontier_B_set = set([x[-1] for x in frontier_B])
-                intersection_nodes = list(explored_C.intersection(explored_B.union(frontier_B_set)))
+                intersection_nodes2 = list(explored_C.intersection(explored_B.union(frontier_B_set)))
                 intersections_cost = []
-                for node in intersection_nodes:
+                for node in intersection_nodes2:
                     if node is goals[1]:
                         #the cost to the from start to start is 0
                         cost = branch_C[node][0]
@@ -919,13 +1080,13 @@ def tridirectional_search(graph, goals):
                     intersections_cost.append(cost)
                 
                 best_intersection_node_index = intersections_cost.index(min(intersections_cost))
-                best_intersection_node =intersection_nodes[best_intersection_node_index] 
+                best_intersection_node2 =intersection_nodes2[best_intersection_node_index] 
                 break
             
             if current_node_C == goals[2]:
                 current_cost_C = 0.0
             else:
-                current_cost_C = branch_B[current_node_B][0]
+                current_cost_C = branch_C[current_node_C][0]
             
 
             
@@ -947,8 +1108,178 @@ def tridirectional_search(graph, goals):
     
     if found_path:
         path = []
-        print("tri-dri intersection: {}".format(best_intersection_node))
+        # print("tri-dri intersection1: {} and intersection 2: {}".format(best_intersection_node1,best_intersection_node2))
+        if star_branch == 0:
+            # Branch A won
+            #best interescetion node 1 is the intersection between A and B
+            n = best_intersection_node1
+            path.append(n)
+            #to avoid duplicate path, more check statement is added  (if the intersection is the start or end, it may result in duplicate nodes in the path)
+            #from A to intersection 1
+            if n != goals[0]:
+                while branch_A [n][1] != goals[0]:
+                    path.append(branch_A[n][1])
+                    n = branch_A[n][1]
+                path.append(goals[0])
+                path.reverse()
+            # from interesction 1 to B
+            n = best_intersection_node1 
+            if n != goals[1]:
+                path_temp = []
+                while branch_B[n][1] != goals[1]:
+                    path_temp.append(branch_B[n][1])
+                    n = branch_B[n][1]
+                path_temp.append(goals[1]) 
+                path += path_temp
+            #from B to interesction 1
 
+            if n == best_intersection_node1:
+                #B is teh intersection 1 so no need to do anything
+                pass
+            else:
+                path_temp.reverse()
+                path += path_temp
+
+            #from intersection 1 to intersection 2
+            if best_intersection_node1 == best_intersection_node2:
+                #no need to do anything
+                pass
+            else:
+                n = best_intersection_node2
+                while branch_A[n][1] != best_intersection_node2:
+                    path.append(branch_A[n][1])
+                    n = branch_A[n][1]
+                path.append(best_intersection_node2)
+
+            #go from intersection 2 to C
+            n = best_intersection_node2 
+            if n != goals[2]:
+                path_temp = []
+                while branch_C [n][1] != best_intersection_node2:
+                    path_temp.append(branch_C[n][1])
+                    n = branch_C[n][1]
+                path_temp.append(best_intersection_node2)
+                path_temp.reverse()
+                
+                #add it the orginal path
+                path += path_temp
+
+
+            
+            print(path)
+
+        elif star_branch == 1:
+            # Branch B won
+            #best interescetion node 1 is the intersection between B and A
+            n = best_intersection_node1
+            path.append(n)
+            #to avoid duplicate path, more check statement is added  (if the intersection is the start or end, it may result in duplicate nodes in the path)
+            #from B to intersection 1
+            if n != goals[1]:
+                while branch_B [n][1] != goals[1]:
+                    path.append(branch_B[n][1])
+                    n = branch_B[n][1]
+                path.append(goals[1])
+                path.reverse()
+            # from interesction 1 to B
+            n = best_intersection_node1 
+            if n != goals[0]:
+                path_temp = []
+                while branch_A[n][1] != goals[0]:
+                    path_temp.append(branch_A[n][1])
+                    n = branch_A[n][1]
+                path_temp.append(goals[0]) 
+                path += path_temp
+            #from A to interesction 1
+
+            if n == best_intersection_node1:
+                #B is teh intersection 1 so no need to do anything
+                pass
+            else:
+                path_temp.reverse()
+                path += path_temp
+
+            #from intersection 1 to intersection 2
+            if best_intersection_node1 == best_intersection_node2:
+                #no need to do anything
+                pass
+            else:
+                n = best_intersection_node1
+                while branch_B[n][1] != best_intersection_node2:
+                    path.append(branch_B[n][1])
+                    n = branch_B[n][1]
+                path.append(best_intersection_node2)
+
+            #go from intersection 2 to C
+            n = best_intersection_node2 
+            if n != goals[2]:
+                path_temp = []
+                while branch_C [n][1] != best_intersection_node2:
+                    path_temp.append(branch_C[n][1])
+                    n = branch_C[n][1]
+                path_temp.append(best_intersection_node2)
+                path_temp.reverse()
+                
+                #add it the orginal path
+                path += path_temp
+
+            
+            print(path)
+        elif star_branch ==2:
+            # Branch C won
+            #best interescetion node 1 is the intersection between C and B
+            n = best_intersection_node1
+            path.append(n)
+            #to avoid duplicate path, more check statement is added  (if the intersection is the start or end, it may result in duplicate nodes in the path)
+            #from A to intersection 1
+            if n != goals[2]:
+                while branch_C [n][1] != goals[2]:
+                    path.append(branch_C[n][1])
+                    n = branch_C[n][1]
+                path.append(goals[2])
+                path.reverse()
+            # from interesction 1 to A
+            n = best_intersection_node1 
+            if n != goals[0]:
+                path_temp = []
+                while branch_A[n][1] != goals[0]:
+                    path_temp.append(branch_A[n][1])
+                    n = branch_A[n][1]
+                path_temp.append(goals[0]) 
+                path += path_temp
+            #from B to interesction 1
+
+            if n == best_intersection_node1:
+                #start [0] is teh intersection 1 so no need to do anything
+                pass
+            else:
+                path_temp.reverse()
+                path += path_temp
+
+            #from intersection 1 to intersection 2
+            if best_intersection_node1 == best_intersection_node2:
+                #no need to do anything
+                pass
+            else:
+                n = best_intersection_node1
+                while branch_C[n][1] != best_intersection_node2:
+                    path.append(branch_C[n][1])
+                    n = branch_C[n][1]
+                path.append(best_intersection_node2)
+
+            #go from intersection 2 to B
+            n = best_intersection_node2 
+            if n != goals[1]:
+                path_temp = []
+                while branch_B [n][1] != best_intersection_node2:
+                    path_temp.append(branch_B[n][1])
+                    n = branch_B[n][1]
+                path_temp.append(best_intersection_node2)
+                path_temp.reverse()
+                
+                #add it the orginal path
+                path += path_temp
+                print(path)
         return path
     raise NotImplementedError
 
