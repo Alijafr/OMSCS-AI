@@ -1,4 +1,5 @@
 # coding=utf-8
+# from assignment_1.submission import tridirectional_search, tridirectional_search1
 import pickle
 import random
 import unittest
@@ -9,7 +10,7 @@ import networkx
 from explorable_graph import ExplorableGraph
 from submission import PriorityQueue, a_star, bidirectional_a_star, \
     bidirectional_ucs, breadth_first_search, uniform_cost_search, haversine_dist_heuristic, \
-    tridirectional_upgraded, custom_heuristic
+    tridirectional_upgraded, custom_heuristic, tridirectional_search
 from visualize_graph import plot_search
 
 
@@ -54,103 +55,103 @@ class TestBasicSearch(unittest.TestCase):
         self.romania = ExplorableGraph(romania)
         self.romania.reset_search()
 
-    def test_bfs(self):
-        """Test and visualize breadth-first search"""
-        start = 'a'
-        goal = 'u'
+    # def test_bfs(self):
+    #     """Test and visualize breadth-first search"""
+    #     start = 'a'
+    #     goal = 'u'
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        self.romania.reset_search()
-        path = breadth_first_search(self.romania, start, goal)
+    #     self.romania.reset_search()
+    #     path = breadth_first_search(self.romania, start, goal)
 
-        self.draw_graph(self.romania, node_positions=node_positions,
-                        start=start, goal=goal, path=path,
-                        title='test_bfs blue=start, yellow=goal, green=explored')
+    #     self.draw_graph(self.romania, node_positions=node_positions,
+    #                     start=start, goal=goal, path=path,
+    #                     title='test_bfs blue=start, yellow=goal, green=explored')
 
-    def test_bfs_num_explored(self):
-        """Test BFS for correct path and number of explored nodes"""
-        start = 'a'
-        goal = 'u'
+    # def test_bfs_num_explored(self):
+    #     """Test BFS for correct path and number of explored nodes"""
+    #     start = 'a'
+    #     goal = 'u'
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        self.romania.reset_search()
-        path = breadth_first_search(self.romania, start, goal)
-        self.assertEqual(['a', 's', 'f', 'b', 'u'], path)   # Check for correct path
+    #     self.romania.reset_search()
+    #     path = breadth_first_search(self.romania, start, goal)
+    #     self.assertEqual(['a', 's', 'f', 'b', 'u'], path)   # Check for correct path
 
-        explored_nodes = sum(list(self.romania.explored_nodes().values()))
-        self.assertLessEqual(explored_nodes, 10)    # Compare explored nodes to reference implementation
+    #     explored_nodes = sum(list(self.romania.explored_nodes().values()))
+    #     self.assertLessEqual(explored_nodes, 10)    # Compare explored nodes to reference implementation
 
-    def test_bfs_empty_path(self):
-        start = "a"
-        goal = "a"
-        path = breadth_first_search(self.romania, start, goal)
-        self.assertEqual(path, [])
+    # def test_bfs_empty_path(self):
+    #     start = "a"
+    #     goal = "a"
+    #     path = breadth_first_search(self.romania, start, goal)
+    #     self.assertEqual(path, [])
 
-    def test_ucs(self):
-        """TTest and visualize uniform-cost search"""
-        start = 'a'
-        goal = 'u'
+    # def test_ucs(self):
+    #     """TTest and visualize uniform-cost search"""
+    #     start = 'a'
+    #     goal = 'u'
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        self.romania.reset_search()
-        path = uniform_cost_search(self.romania, start, goal)
+    #     self.romania.reset_search()
+    #     path = uniform_cost_search(self.romania, start, goal)
 
-        self.draw_graph(self.romania, node_positions=node_positions,
-                        start=start, goal=goal, path=path,
-                        title='test_ucs blue=start, yellow=goal, green=explored')
+    #     self.draw_graph(self.romania, node_positions=node_positions,
+    #                     start=start, goal=goal, path=path,
+    #                     title='test_ucs blue=start, yellow=goal, green=explored')
 
-    def test_ucs_num_explored(self):
-        """Test UCS for correct path and number of explored nodes"""
-        start = 'a'
-        goal = 'u'
+    # def test_ucs_num_explored(self):
+    #     """Test UCS for correct path and number of explored nodes"""
+    #     start = 'a'
+    #     goal = 'u'
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        self.romania.reset_search()
-        path = uniform_cost_search(self.romania, start, goal)
+    #     self.romania.reset_search()
+    #     path = uniform_cost_search(self.romania, start, goal)
 
-        self.assertEqual(path, ['a', 's', 'r', 'p', 'b', 'u'])   # Check for correct path
+    #     self.assertEqual(path, ['a', 's', 'r', 'p', 'b', 'u'])   # Check for correct path
 
-        explored_nodes = sum(list(self.romania.explored_nodes().values()))
-        self.assertEqual(explored_nodes, 13)    # Compare explored nodes to reference implementation
+    #     explored_nodes = sum(list(self.romania.explored_nodes().values()))
+    #     self.assertEqual(explored_nodes, 13)    # Compare explored nodes to reference implementation
 
-    def test_a_star(self):
-        """Test and visualize A* search"""
-        start = 'a'
-        goal = 'u'
+    # def test_a_star(self):
+    #     """Test and visualize A* search"""
+    #     start = 'a'
+    #     goal = 'u'
         
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
         
-        self.romania.reset_search()
-        path = a_star(self.romania, start, goal)
+    #     self.romania.reset_search()
+    #     path = a_star(self.romania, start, goal)
 
-        self.draw_graph(self.romania, node_positions=node_positions,
-                        start=start, goal=goal, path=path,
-                        title='test_astar blue=start, yellow=goal, green=explored')
+    #     self.draw_graph(self.romania, node_positions=node_positions,
+    #                     start=start, goal=goal, path=path,
+    #                     title='test_astar blue=start, yellow=goal, green=explored')
 
-    def test_a_star_num_explored(self):
-        """Test A* for correct path and number of explored nodes"""
-        start = 'a'
-        goal = 'u'
+    # def test_a_star_num_explored(self):
+    #     """Test A* for correct path and number of explored nodes"""
+    #     start = 'a'
+    #     goal = 'u'
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        self.romania.reset_search()
-        path = a_star(self.romania, start, goal)
+    #     self.romania.reset_search()
+    #     path = a_star(self.romania, start, goal)
 
-        self.assertEqual(path, ['a', 's', 'r', 'p', 'b', 'u'])   # Check for correct path
+    #     self.assertEqual(path, ['a', 's', 'r', 'p', 'b', 'u'])   # Check for correct path
 
-        explored_nodes = sum(list(self.romania.explored_nodes().values()))
-        self.assertEqual(explored_nodes, 8)    # Compare explored nodes to reference implementation
+    #     explored_nodes = sum(list(self.romania.explored_nodes().values()))
+    #     self.assertEqual(explored_nodes, 8)    # Compare explored nodes to reference implementation
 
     @staticmethod
     def draw_graph(graph, node_positions=None, start=None, goal=None,
@@ -207,80 +208,81 @@ class TestBidirectionalSearch(unittest.TestCase):
         self.romania = ExplorableGraph(romania)
         self.romania.reset_search()
 
-    def test_bidirectional_ucs(self):
-        """Test and generate GeoJSON for bidirectional UCS search"""
-        path = bidirectional_ucs(self.atlanta, '69581003', '69581000')
-        all_explored = self.atlanta.explored_nodes()
-        plot_search(self.atlanta, 'atlanta_search_bidir_ucs.json', path,
-                    all_explored)
+    # def test_bidirectional_ucs(self):
+    #     """Test and generate GeoJSON for bidirectional UCS search"""
+    #     path = bidirectional_ucs(self.atlanta, '69581003', '69581000')
+    #     all_explored = self.atlanta.explored_nodes()
+    #     plot_search(self.atlanta, 'atlanta_search_bidir_ucs.json', path,
+    #                 all_explored)
 
-    def test_bidirectional_all (self):
-        # Test every combination until we find the one that is failing
-        for start_node in self.romania.nodes.keys():
-            for goal_node in self.romania.nodes.keys():
-                path = bidirectional_ucs(self.romania, start_node, goal_node)
+    # def test_bidirectional_all (self):
+    #     # Test every combination until we find the one that is failing
+    #     for start_node in self.romania.nodes.keys():
+    #         for goal_node in self.romania.nodes.keys():
+    #             path = bidirectional_ucs(self.romania, start_node, goal_node)
 
-                i = 0
-                path_length = len(path)
-                total_cost = 0
-                try:
-                    while i < (path_length - 1):
-                        edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
-                        total_cost += edge_weight
-                        i += 1
-                except TypeError:
-                    break_here = 0
-
-
-    def test_bidirectional_all (self):
-        # Test every combination until we find the one that is failing
-        for start_node in self.romania.nodes.keys():
-            for goal_node in self.romania.nodes.keys():
-                path = bidirectional_a_star(self.romania, start_node, goal_node)
-
-                i = 0
-                path_length = len(path)
-                total_cost = 0
-                try:
-                    while i < (path_length - 1):
-                        edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
-                        total_cost += edge_weight
-                        i += 1
-                except TypeError:
-                    break_here = 0
-
-    def test_bidirectional_ucs_romania(self):
-        """Test Bi-UCS and visualize"""
-        start = 'o'
-        goal = 'd'
-
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
-
-        self.romania.reset_search()
-        path = bidirectional_ucs(self.romania, start, goal)
-
-        TestBasicSearch.draw_graph(self.romania, node_positions=node_positions,
-                        start=start, goal=goal, path=path,
-                        title='bi-ucs blue=start, yellow=goal, green=explored')
+    #             i = 0
+    #             path_length = len(path)
+    #             total_cost = 0
+    #             try:
+    #                 while i < (path_length - 1):
+    #                     edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
+    #                     total_cost += edge_weight
+    #                     i += 1
+    #             except TypeError:
+    #                 break_here = 0
 
 
-    def test_bidirectional_ucs_explored(self):
-        """Test Bi-UCS for correct path and number of explored nodes"""
-        start = 'o'
-        goal = 'd'
+    # def test_bidirectional_all (self):
+    #     # Test every combination until we find the one that is failing
+    #     for start_node in self.romania.nodes.keys():
+    #         for goal_node in self.romania.nodes.keys():
+    #             path = bidirectional_a_star(self.romania, start_node, goal_node)
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+    #             i = 0
+    #             path_length = len(path)
+    #             total_cost = 0
+    #             try:
+    #                 while i < (path_length - 1):
+    #                     edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
+    #                     total_cost += edge_weight
+    #                     i += 1
+    #             except TypeError:
+    #                 break_here = 0
 
-        self.romania.reset_search()
-        path = bidirectional_ucs(self.romania, start, goal)
+    # def test_bidirectional_ucs_romania(self):
+    #     """Test Bi-UCS and visualize"""
+    #     start = 'o'
+    #     goal = 'd'
 
-        self.assertEqual(path, ['o', 's', 'r', 'c', 'd'])   # Check for correct path. Check your stopping condition
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        explored_nodes = sum(list(self.romania.explored_nodes().values()))
-        # print('BiUCS explore', explored_nodes, list(self.romania.explored_nodes.values()))
-        self.assertLessEqual(explored_nodes, 12)    # Compare explored nodes to reference implementation
+    #     self.romania.reset_search()
+    #     path = bidirectional_ucs(self.romania, start, goal)
+
+    #     TestBasicSearch.draw_graph(self.romania, node_positions=node_positions,
+    #                     start=start, goal=goal, path=path,
+    #                     title='bi-ucs blue=start, yellow=goal, green=explored')
+
+
+    # def test_bidirectional_ucs_explored(self):
+    #     """Test Bi-UCS for correct path and number of explored nodes"""
+    #     start = 'o'
+    #     goal = 'd'
+
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
+
+    #     self.romania.reset_search()
+    #     path = bidirectional_ucs(self.romania, start, goal)
+
+    #     self.assertEqual(path, ['o', 's', 'r', 'c', 'd'])   # Check for correct path. Check your stopping condition
+
+    #     explored_nodes = sum(list(self.romania.explored_nodes().values()))
+    #     # print('BiUCS explore', explored_nodes, list(self.romania.explored_nodes.values()))
+    #     self.assertLessEqual(explored_nodes, 12)    # Compare explored nodes to reference implementation
+
     # def test_Astart_all (self):
     #     # Test every combination until we find the one that is failing
     #     for start_node in self.romania.nodes.keys():
@@ -298,26 +300,41 @@ class TestBidirectionalSearch(unittest.TestCase):
     #             except TypeError:
     #                 break_here = 0
 
-    def test_astar_romania(self):
-        """Test Bi-UCS and visualize"""
-        start = 'o'
-        goal = 'd'
+    def test_bidirectional_all (self):
+        # Test every combination until we find the one that is failing
+        
+        path = tridirectional_search(self.romania, ['t','h','i'])
 
-        node_positions = {n: self.romania.nodes[n]['pos'] for n in
-                          self.romania.nodes.keys()}
+        i = 0
+        path_length = len(path)
+        total_cost = 0
+        try:
+            while i < (path_length - 1):
+                edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
+                total_cost += edge_weight
+                i += 1
+        except TypeError:
+            break_here = 0
+    # def test_astar_romania(self):
+    #     """Test Bi-UCS and visualize"""
+    #     start = 'o'
+    #     goal = 'd'
 
-        self.romania.reset_search()
-        path = bidirectional_a_star(self.romania, start, goal)
+    #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
+    #                       self.romania.nodes.keys()}
 
-        TestBasicSearch.draw_graph(self.romania, node_positions=node_positions,
-                        start=start, goal=goal, path=path,
-                        title='bi-A* blue=start, yellow=goal, green=explored')
-    def test_bidirectional_a_star(self):
-        """Test and generate GeoJSON for bidirectional A* search"""
-        path = bidirectional_a_star(self.atlanta, '69581003', '69581000', heuristic=haversine_dist_heuristic)
-        all_explored = self.atlanta.explored_nodes()
-        plot_search(self.atlanta, 'atlanta_search_bidir_a_star.json', path,
-                    all_explored)
+    #     self.romania.reset_search()
+    #     path = bidirectional_a_star(self.romania, start, goal)
+
+    #     TestBasicSearch.draw_graph(self.romania, node_positions=node_positions,
+    #                     start=start, goal=goal, path=path,
+    #                     title='bi-A* blue=start, yellow=goal, green=explored')
+    # def test_bidirectional_a_star(self):
+    #     """Test and generate GeoJSON for bidirectional A* search"""
+    #     path = bidirectional_a_star(self.atlanta, '69581003', '69581000', heuristic=haversine_dist_heuristic)
+    #     all_explored = self.atlanta.explored_nodes()
+    #     plot_search(self.atlanta, 'atlanta_search_bidir_a_star.json', path,
+    #                 all_explored)
 
 if __name__ == '__main__':
     unittest.main()
