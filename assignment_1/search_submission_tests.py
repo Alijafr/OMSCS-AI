@@ -253,7 +253,7 @@ class TestBidirectionalSearch(unittest.TestCase):
     # def test_bidirectional_ucs_romania(self):
     #     """Test Bi-UCS and visualize"""
     #     start = 'o'
-    #     goal = 'd'
+    #     goal = 'h'
 
     #     node_positions = {n: self.romania.nodes[n]['pos'] for n in
     #                       self.romania.nodes.keys()}
@@ -299,11 +299,25 @@ class TestBidirectionalSearch(unittest.TestCase):
     #                     i += 1
     #             except TypeError:
     #                 break_here = 0
+    # def test_bidirectional_all (self):
+    #     # Test every combination until we find the one that is failing
+        
+    #     path = bidirectional_ucs(self.romania, 'h','o')
 
+    #     i = 0
+    #     path_length = len(path)
+    #     total_cost = 0
+    #     try:
+    #         while i < (path_length - 1):
+    #             edge_weight = self.romania.get_edge_data(path[i], path[i+1])['weight']
+    #             total_cost += edge_weight
+    #             i += 1
+    #     except TypeError:
+    #         break_here = 0
     def test_bidirectional_all (self):
         # Test every combination until we find the one that is failing
         
-        path = tridirectional_search(self.romania, ['t','h','i'])
+        path = tridirectional_upgraded(self.romania, ['h','h','o'])
 
         i = 0
         path_length = len(path)
