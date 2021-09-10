@@ -316,8 +316,7 @@ class TestBidirectionalSearch(unittest.TestCase):
     #         break_here = 0
     def test_bidirectional_all (self):
         # Test every combination until we find the one that is failing
-        
-        path = tridirectional_upgraded(self.romania, ['h','h','o'])
+        path = tridirectional_upgraded(self.romania, ['o','r','u'])
 
         i = 0
         path_length = len(path)

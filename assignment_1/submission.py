@@ -12,6 +12,7 @@ import math
 from typing import Counter, Union
 
 
+
 class PriorityQueue(object):
     """
     A queue structure where each element is served in order of priority.
@@ -556,7 +557,7 @@ def bidirectional_ucs(graph, start, goal):
                 n = branch_backward[n][1]
             path.append(goal) #now path should contain path from intersection to goal 
         # print("start: {}, goal: {}".format(start,goal))
-        print("bi-path",path)
+        # print("bi-path",path)
         return path
 
         
@@ -1062,9 +1063,9 @@ def tridirectional_search(graph, goals):
         return []
     elif  len(set(goals)) == 2:
         goals = list(set(goals))
-        print("found duplicate goals {}".format(goals))
+        # print("found duplicate goals {}".format(goals))
         path = bidirectional_ucs1(graph,goals[0],goals[1])
-        print(path)
+        # print(" goals {} and path: {}".format(goals,path))
         return path
     
     #search from A 
@@ -1334,7 +1335,7 @@ def tridirectional_search(graph, goals):
             branch2search = costs.index(min(costs))
     
     if found_path:
-        print("soluiton has been found")
+        # print("soluiton has been found")
         path = []
         # path_AB = find_path_bidir(goals[0],goals[1],intersection_node_AB,branch_A,branch_B)
         # path_AC = find_path_bidir(goals[0],goals[2],intersection_node_AC,branch_A,branch_C)
@@ -1365,7 +1366,7 @@ def tridirectional_search(graph, goals):
             path += path_BA[:-1]
             path_AC = find_path_bidir(goals[0],goals[2],intersection_node_AC,branch_A,branch_C)
             path += path_AC
-        # print(path)
+        # print(" goals {} and path: {}".format(goals,path))
         return path
     raise NotImplementedError
 
@@ -1685,6 +1686,7 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
         goals = list(set(goals))
         # print("found duplicate goals {}".format(goals))
         path = bidirectional_a_star1(graph,goals[0],goals[1])
+        # print("tri-A*: goals {} and path: {}".format(goals,path))
         # print(path)
         return path
     
@@ -1727,6 +1729,7 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
         
         if branch2search==0 and stop_A == False:
             _, _ , current_node_A = frontier_A.pop() 
+            # print("A: ",current_node_A)
             explored_A.add(current_node_A)
             if explored_A.intersection(explored_B) and intersection_node_AB is None:
                 #finding the optimal path from A -- >B , B-->A
@@ -1747,6 +1750,17 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 intersection_node_index = intersections_cost.index(min(intersections_cost))
                 intersection_node_AB =intersection_nodes[intersection_node_index]
                 intersection_cost_AB = min(intersections_cost)
+                #update froniter A and B to find C 
+                frontier_A_temp = PriorityQueue()
+                frontier_B_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
             if explored_A.intersection(explored_C) and intersection_node_AC is None:
                 #finding the optimal path from A -- >C , B-->C
                 frontier_C_set = set([x[-1] for x in frontier_C])
@@ -1766,6 +1780,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 intersection_node_index = intersections_cost.index(min(intersections_cost))
                 intersection_node_AC =intersection_nodes[intersection_node_index]
                 intersection_cost_AC = min(intersections_cost)
+                # stop_A = True
+                #update froniter A and C so that they focus on B
+                frontier_A_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
             if explored_A.intersection(explored_B) and explored_A.intersection(explored_C):
                 #which means the optimal solution for AB and AC have been already calculated
                 stop_A = True
@@ -1782,13 +1808,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 for neighbour in sorted(graph.neighbors(current_node_A)): #the queue is structured as (priority, counter,node)
                     neighbour_cost = graph.get_edge_weight(current_node_A,neighbour)
                     cost_total_A = current_cost_A + neighbour_cost
-                    h1 = heuristic(graph,neighbour,goals[1])
-                    h2 = heuristic(graph,neighbour,goals[2])
-                    # if h1 >= h2:
-                    #     h = h2
-                    # else:
-                    #     h = h1
-                    h = h1 + h2
+                    if intersection_node_AB is not None:
+                        h = heuristic(graph,neighbour,goals[2])
+                    elif intersection_node_AC is not None:
+                        h = heuristic(graph,neighbour,goals[1])
+                    else:
+                        h2 = heuristic(graph,neighbour,goals[2])
+                        h1 = heuristic(graph,neighbour,goals[1])
+                        if h1 >= h2:
+                            h = h2
+                        else:
+                            h = h1
+                        # h = h1 + h2
                     f = cost_total_A + h 
                     if neighbour not in frontier_A and neighbour not in explored_A:
                         frontier_A.append((f, neighbour))
@@ -1802,6 +1833,7 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
              
         elif branch2search==1 and stop_B ==False:
             _, _ , current_node_B = frontier_B.pop() 
+            # print("B: ",current_node_B)
             explored_B.add(current_node_B)
             if explored_B.intersection(explored_A) and intersection_node_AB is None:
                 #finding the optimal path from A -- >B , B-->A
@@ -1822,6 +1854,20 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 intersection_node_index = intersections_cost.index(min(intersections_cost))
                 intersection_node_AB =intersection_nodes[intersection_node_index]
                 intersection_cost_AB = min(intersections_cost)
+                # stop_B = True
+
+                #update froniter A and B so that they focus on C
+                frontier_A_temp = PriorityQueue()
+                frontier_B_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+
             if explored_B.intersection(explored_C) and intersection_node_BC is None:
                 #finding the optimal path from B -- >C , C-->B
                 frontier_C_set = set([x[-1] for x in frontier_C])
@@ -1841,6 +1887,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 intersection_node_index = intersections_cost.index(min(intersections_cost))
                 intersection_node_BC =intersection_nodes[intersection_node_index]
                 intersection_cost_BC = min(intersections_cost)
+                # stop_B = True
+                #update froniter B and C so that they focus on A
+                frontier_B_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
             if explored_B.intersection(explored_C) and explored_B.intersection(explored_A):
                 #which means the optimal solution for AB and AC have been already calculated
                 stop_B = True
@@ -1859,13 +1917,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 for neighbour in sorted(graph.neighbors(current_node_B)): #the queue is structured as (priority, counter,node)
                     neighbour_cost = graph.get_edge_weight(current_node_B,neighbour)
                     cost_total_B = current_cost_B + neighbour_cost
-                    h1 = heuristic(graph,neighbour,goals[0])
-                    h2 = heuristic(graph,neighbour,goals[2])
-                    # if h1 >= h2:
-                    #     h = h2
-                    # else:
-                    #     h = h1
-                    h = h1 + h2
+                    if intersection_node_AB is not None:
+                        h = heuristic(graph,neighbour,goals[2])
+                    elif intersection_node_BC is not None:
+                        h = heuristic(graph,neighbour,goals[0])
+                    else:
+                        h2 = heuristic(graph,neighbour,goals[2])
+                        h1 = heuristic(graph,neighbour,goals[0])
+                        if h1 >= h2:
+                            h = h2
+                        else:
+                            h = h1
+                        # h = h1 + h2
                     f = cost_total_B + h 
                     if neighbour not in frontier_B and neighbour not in explored_B:
                         frontier_B.append((f, neighbour))
@@ -1878,6 +1941,7 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
             
         elif branch2search ==2 and stop_C == False:
             _, _ , current_node_C = frontier_C.pop() 
+            # print("C: ",current_node_C)
             explored_C.add(current_node_C)
             if explored_C.intersection(explored_A) and intersection_node_AC is None:
                 #finding the optimal path from C -- >A , A-->C
@@ -1898,6 +1962,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 intersection_node_index = intersections_cost.index(min(intersections_cost))
                 intersection_node_AC =intersection_nodes[intersection_node_index]
                 intersection_cost_AC = min(intersections_cost)
+                # stop_C = True
+                #update froniter A and C so that they focus on B
+                frontier_A_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
             if explored_C.intersection(explored_B) and intersection_node_BC is None:
                 #finding the optimal path from B -- >C , C-->B
                 frontier_B_set = set([x[-1] for x in frontier_B])
@@ -1917,6 +1993,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 intersection_node_index = intersections_cost.index(min(intersections_cost))
                 intersection_node_BC =intersection_nodes[intersection_node_index]
                 intersection_cost_BC = min(intersections_cost)
+                # stop_C = True
+                #update froniter B and C so that they focus on A
+                frontier_B_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
             if explored_C.intersection(explored_A) and explored_C.intersection(explored_C):
                 #which means the optimal solution for AB and AC have been already calculated
                 stop_C = True
@@ -1935,13 +2023,18 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 for neighbour in sorted(graph.neighbors(current_node_C)): #the queue is structured as (priority, counter,node)
                     neighbour_cost = graph.get_edge_weight(current_node_C,neighbour)
                     cost_total_C = current_cost_C + neighbour_cost
-                    h1 = heuristic(graph,neighbour,goals[0])
-                    h2 = heuristic(graph,neighbour,goals[1])
-                    # if h1 >= h2:
-                    #     h = h2
-                    # else:
-                    #     h = h1
-                    h = h1 + h2
+                    if intersection_node_AC is not None:
+                        h = heuristic(graph,neighbour,goals[1])
+                    elif intersection_node_BC is not None:
+                        h = heuristic(graph,neighbour,goals[0])
+                    else:
+                        h2 = heuristic(graph,neighbour,goals[1])
+                        h1 = heuristic(graph,neighbour,goals[0])
+                        if h1 >= h2:
+                            h = h2
+                        else:
+                            h = h1
+                        # h = h1 + h2
                     f = cost_total_C + h
                     if neighbour not in frontier_C and neighbour not in explored_C:
                         frontier_C.append((f, neighbour))
@@ -1951,6 +2044,7 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                         #how to remove while not knowing the counter number?
                         frontier_C.append((f,neighbour))#is it okay to add without removing
                         branch_C [neighbour] = (cost_total_C, current_node_C) #add the parent branch  
+
 
         if intersection_node_AC is not None and intersection_node_AB is not None and intersection_node_BC is not None:
             found_path = True    
@@ -1970,10 +2064,12 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                 costs.append(math.inf)
             else:
                 costs.append(frontier_C.top()[0])
+            
+            # print(costs)
             branch2search = costs.index(min(costs))
     
     if found_path:
-        print("soluiton has been found")
+        # print("soluiton has been found")
         path = []
         # path_AB = find_path_bidir(goals[0],goals[1],intersection_node_AB,branch_A,branch_B)
         # path_AC = find_path_bidir(goals[0],goals[2],intersection_node_AC,branch_A,branch_C)
@@ -2001,10 +2097,10 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
             path += path_CB
         elif best_path == 2: #best path is BAC=CAB 
             path_BA = find_path_bidir(goals[1],goals[0],intersection_node_AB,branch_B,branch_A)
-            path += path_BA[:-1]
+            path += path_BA[:-1]     
             path_AC = find_path_bidir(goals[0],goals[2],intersection_node_AC,branch_A,branch_C)
             path += path_AC
-        print(path)
+        # print(" tri-A*: goals {} and path: {}".format(goals,path))
         return path
     raise NotImplementedError
 
