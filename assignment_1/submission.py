@@ -1784,10 +1784,11 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                     cost_total_A = current_cost_A + neighbour_cost
                     h1 = heuristic(graph,neighbour,goals[1])
                     h2 = heuristic(graph,neighbour,goals[2])
-                    if h1 >= h2:
-                        h = h2
-                    else:
-                        h = h1
+                    # if h1 >= h2:
+                    #     h = h2
+                    # else:
+                    #     h = h1
+                    h = h1 + h2
                     f = cost_total_A + h 
                     if neighbour not in frontier_A and neighbour not in explored_A:
                         frontier_A.append((f, neighbour))
@@ -1860,10 +1861,11 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                     cost_total_B = current_cost_B + neighbour_cost
                     h1 = heuristic(graph,neighbour,goals[0])
                     h2 = heuristic(graph,neighbour,goals[2])
-                    if h1 >= h2:
-                        h = h2
-                    else:
-                        h = h1
+                    # if h1 >= h2:
+                    #     h = h2
+                    # else:
+                    #     h = h1
+                    h = h1 + h2
                     f = cost_total_B + h 
                     if neighbour not in frontier_B and neighbour not in explored_B:
                         frontier_B.append((f, neighbour))
@@ -1935,10 +1937,11 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
                     cost_total_C = current_cost_C + neighbour_cost
                     h1 = heuristic(graph,neighbour,goals[0])
                     h2 = heuristic(graph,neighbour,goals[1])
-                    if h1 >= h2:
-                        h = h2
-                    else:
-                        h = h1
+                    # if h1 >= h2:
+                    #     h = h2
+                    # else:
+                    #     h = h1
+                    h = h1 + h2
                     f = cost_total_C + h
                     if neighbour not in frontier_C and neighbour not in explored_C:
                         frontier_C.append((f, neighbour))
