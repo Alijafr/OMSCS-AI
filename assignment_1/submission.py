@@ -1680,6 +1680,9 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
         the other goal nodes).
     """
     # TODO: finish this function
+    '''
+    The main idea of this tri-A* is that it start with the min heuristic from both goals but once two goal intersects, the focus sololy on the remaining goal.
+    '''
     if len(set(goals)) ==1:
         return []
     elif  len(set(goals)) == 2:
@@ -2103,7 +2106,440 @@ def tridirectional_upgraded(graph, goals, heuristic=euclidean_dist_heuristic, la
         # print(" tri-A*: goals {} and path: {}".format(goals,path))
         return path
     raise NotImplementedError
+def tridirectional_upgraded2(graph, goals, heuristic=euclidean_dist_heuristic, landmarks=None):
+    """
+    Exercise 4: Upgraded Tridirectional Search
 
+    See README.MD for exercise description.
+
+    Args:
+        graph (ExplorableGraph): Undirected graph to search.
+        goals (list): Key values for the 3 goals
+        heuristic: Function to determine distance heuristic.
+            Default: euclidean_dist_heuristic.
+        landmarks: Iterable containing landmarks pre-computed in compute_landmarks()
+            Default: None
+
+    Returns:
+        The best path as a list from one of the goal nodes (including both of
+        the other goal nodes).
+    """
+    # TODO: finish this function
+    '''
+    The main idea of this tri-A* is that it start with the min heuristic from both goals but once two goal intersects, the focus sololy on the remaining goal.
+    '''
+    if len(set(goals)) ==1:
+        return []
+    elif  len(set(goals)) == 2:
+        goals = list(set(goals))
+        # print("found duplicate goals {}".format(goals))
+        path = bidirectional_a_star1(graph,goals[0],goals[1])
+        # print("tri-A*: goals {} and path: {}".format(goals,path))
+        # print(path)
+        return path
+    
+    #search from A 
+    frontier_A = PriorityQueue()
+    explored_A = set(goals[0])
+    current_node_A= None
+    frontier_A.append((0,goals[0]))
+    branch_A = {}
+    #searh from B 
+    frontier_B = PriorityQueue()
+    explored_B = set(goals[1])
+    current_node_B = None
+    frontier_B.append((0,goals[1]))
+    branch_B = {}
+    #search from C 
+    frontier_C = PriorityQueue()
+    explored_C = set(goals[2])
+    current_node_C= None
+    frontier_C.append((0,goals[2]))
+    branch_C = {}
+
+    #Flag to to alternate between searchs (0=A,1=B,2=C)
+    branch2search= 0
+    #flag to check if path is found
+    found_path = False
+    #intersection nodes
+    intersection_nodes = None
+    intersection_node_AB = None
+    intersection_cost_AB = None
+    intersection_node_AC = None
+    intersection_cost_AC = None
+    intersection_node_BC = None
+    intersection_cost_BC = None
+    #flag to stop exploring branches
+    stop_A = False
+    stop_B = False
+    stop_C = False
+    while True:
+        
+        if branch2search==0 and stop_A == False:
+            _, _ , current_node_A = frontier_A.pop() 
+            # print("A: ",current_node_A)
+            explored_A.add(current_node_A)
+            if explored_A.intersection(explored_B) and intersection_node_AB is None:
+                #finding the optimal path from A -- >B , B-->A
+                frontier_B_set = set([x[-1] for x in frontier_B])
+                intersection_nodes = list(explored_A.intersection(explored_B.union(frontier_B_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    if node is goals[0]:
+                        #the cost to the from start to start is 0
+                        cost = branch_B[node][0]
+                    elif node is goals[1]:
+                        cost = branch_A[node][0]
+                    else:
+                        cost = branch_A[node][0] + branch_B[node][0]
+                    intersections_cost.append(cost)
+                
+                intersection_node_index = intersections_cost.index(min(intersections_cost))
+                intersection_node_AB =intersection_nodes[intersection_node_index]
+                intersection_cost_AB = min(intersections_cost)
+                #update froniter A and B to find C 
+                frontier_A_temp = PriorityQueue()
+                frontier_B_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+            if explored_A.intersection(explored_C) and intersection_node_AC is None:
+                #finding the optimal path from A -- >C , B-->C
+                frontier_C_set = set([x[-1] for x in frontier_C])
+                intersection_nodes = list(explored_A.intersection(explored_C.union(frontier_C_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    if node is goals[0]:
+                        #the cost to the from start to start is 0
+                        cost = branch_C[node][0]
+                    elif node is goals[2]:
+                        cost = branch_A[node][0]
+                    else:
+                        cost = branch_A[node][0] + branch_C[node][0]
+                    intersections_cost.append(cost)
+                
+                intersection_node_index = intersections_cost.index(min(intersections_cost))
+                intersection_node_AC =intersection_nodes[intersection_node_index]
+                intersection_cost_AC = min(intersections_cost)
+                # stop_A = True
+                #update froniter A and C so that they focus on B
+                frontier_A_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
+            if explored_A.intersection(explored_B) and explored_A.intersection(explored_C):
+                #which means the optimal solution for AB and AC have been already calculated
+                stop_A = True
+                
+                
+            else:
+
+                if current_node_A == goals[0]:
+                    current_cost_A = 0.0
+                else:
+                    current_cost_A = branch_A[current_node_A][0]
+                
+                # print(graph[current_node])
+                for neighbour in sorted(graph.neighbors(current_node_A)): #the queue is structured as (priority, counter,node)
+                    neighbour_cost = graph.get_edge_weight(current_node_A,neighbour)
+                    cost_total_A = current_cost_A + neighbour_cost
+                    if intersection_node_AB is not None:
+                        h = heuristic(graph,neighbour,goals[2])
+                    elif intersection_node_AC is not None:
+                        h = heuristic(graph,neighbour,goals[1])
+                    else:
+                        h2 = heuristic(graph,neighbour,goals[2])
+                        h1 = heuristic(graph,neighbour,goals[1])
+                        if h1 >= h2:
+                            h = h2
+                        else:
+                            h = h1
+                        # h = h1 + h2
+                    f = cost_total_A + h 
+                    if neighbour not in frontier_A and neighbour not in explored_A:
+                        frontier_A.append((f, neighbour))
+                        branch_A [neighbour] = (cost_total_A, current_node_A) #add the parent branch
+                        
+                    elif neighbour in frontier_A and cost_total_A < branch_A[neighbour][0]:
+                        #how to remove while not knowing the counter number?
+                        frontier_A.append((f,neighbour))#is it okay to add without removing
+                        branch_A [neighbour] = (cost_total_A, current_node_A) #add the parent branch 
+                #alternate to the backward search 
+             
+        elif branch2search==1 and stop_B ==False:
+            _, _ , current_node_B = frontier_B.pop() 
+            # print("B: ",current_node_B)
+            explored_B.add(current_node_B)
+            if explored_B.intersection(explored_A) and intersection_node_AB is None:
+                #finding the optimal path from A -- >B , B-->A
+                frontier_A_set = set([x[-1] for x in frontier_A])
+                intersection_nodes = list(explored_B.intersection(explored_A.union(frontier_A_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    if node is goals[0]:
+                        #the cost to the from start to start is 0
+                        cost = branch_B[node][0]
+                    elif node is goals[1]:
+                        cost = branch_A[node][0]
+                    else:
+                        cost = branch_A[node][0] + branch_B[node][0]
+                    intersections_cost.append(cost)
+                
+                intersection_node_index = intersections_cost.index(min(intersections_cost))
+                intersection_node_AB =intersection_nodes[intersection_node_index]
+                intersection_cost_AB = min(intersections_cost)
+                # stop_B = True
+
+                #update froniter A and B so that they focus on C
+                frontier_A_temp = PriorityQueue()
+                frontier_B_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[2])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+
+            if explored_B.intersection(explored_C) and intersection_node_BC is None:
+                #finding the optimal path from B -- >C , C-->B
+                frontier_C_set = set([x[-1] for x in frontier_C])
+                intersection_nodes = list(explored_B.intersection(explored_C.union(frontier_C_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    if node is goals[1]:
+                        #the cost to the from start to start is 0
+                        cost = branch_C[node][0]
+                    elif node is goals[2]:
+                        cost = branch_B[node][0]
+                    else:
+                        cost = branch_B[node][0] + branch_C[node][0]
+                    intersections_cost.append(cost)
+                
+                intersection_node_index = intersections_cost.index(min(intersections_cost))
+                intersection_node_BC =intersection_nodes[intersection_node_index]
+                intersection_cost_BC = min(intersections_cost)
+                # stop_B = True
+                #update froniter B and C so that they focus on A
+                frontier_B_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
+            if explored_B.intersection(explored_C) and explored_B.intersection(explored_A):
+                #which means the optimal solution for AB and AC have been already calculated
+                stop_B = True
+
+            else:    
+            
+                if current_node_B == goals[1]:
+                    current_cost_B = 0.0
+                else:
+                    current_cost_B = branch_B[current_node_B][0]
+                
+
+                
+                
+                # print(graph[current_node])
+                for neighbour in sorted(graph.neighbors(current_node_B)): #the queue is structured as (priority, counter,node)
+                    neighbour_cost = graph.get_edge_weight(current_node_B,neighbour)
+                    cost_total_B = current_cost_B + neighbour_cost
+                    if intersection_node_AB is not None:
+                        h = heuristic(graph,neighbour,goals[2])
+                    elif intersection_node_BC is not None:
+                        h = heuristic(graph,neighbour,goals[0])
+                    else:
+                        h2 = heuristic(graph,neighbour,goals[2])
+                        h1 = heuristic(graph,neighbour,goals[0])
+                        if h1 >= h2:
+                            h = h2
+                        else:
+                            h = h1
+                        # h = h1 + h2
+                    f = cost_total_B + h 
+                    if neighbour not in frontier_B and neighbour not in explored_B:
+                        frontier_B.append((f, neighbour))
+                        branch_B [neighbour] = (cost_total_B, current_node_B) #add the parent branch
+                        
+                    elif neighbour in frontier_B and cost_total_B < branch_B[neighbour][0]:
+                        #how to remove while not knowing the counter number?
+                        frontier_B.append((f,neighbour))#is it okay to add without removing
+                        branch_B [neighbour] = (cost_total_B, current_node_B) #add the parent branch 
+            
+        elif branch2search ==2 and stop_C == False:
+            _, _ , current_node_C = frontier_C.pop() 
+            # print("C: ",current_node_C)
+            explored_C.add(current_node_C)
+            if explored_C.intersection(explored_A) and intersection_node_AC is None:
+                #finding the optimal path from C -- >A , A-->C
+                frontier_A_set = set([x[-1] for x in frontier_A])
+                intersection_nodes = list(explored_C.intersection(explored_A.union(frontier_A_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    if node is goals[0]:
+                        #the cost to the from start to start is 0
+                        cost = branch_C[node][0]
+                    elif node is goals[2]:
+                        cost = branch_A[node][0]
+                    else:
+                        cost = branch_A[node][0] + branch_C[node][0]
+                    intersections_cost.append(cost)
+                
+                intersection_node_index = intersections_cost.index(min(intersections_cost))
+                intersection_node_AC =intersection_nodes[intersection_node_index]
+                intersection_cost_AC = min(intersections_cost)
+                # stop_C = True
+                #update froniter A and C so that they focus on B
+                frontier_A_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_A:
+                    cost = branch_A[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_A_temp.append((cost,node[-1]))
+                frontier_A = frontier_A_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[1])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
+            if explored_C.intersection(explored_B) and intersection_node_BC is None:
+                #finding the optimal path from B -- >C , C-->B
+                frontier_B_set = set([x[-1] for x in frontier_B])
+                intersection_nodes = list(explored_C.intersection(explored_B.union(frontier_B_set)))
+                intersections_cost = []
+                # print(branch_forward)
+                for node in intersection_nodes:
+                    if node is goals[1]:
+                        #the cost to the from start to start is 0
+                        cost = branch_C[node][0]
+                    elif node is goals[2]:
+                        cost = branch_B[node][0]
+                    else:
+                        cost = branch_B[node][0] + branch_C[node][0]
+                    intersections_cost.append(cost)
+                
+                intersection_node_index = intersections_cost.index(min(intersections_cost))
+                intersection_node_BC =intersection_nodes[intersection_node_index]
+                intersection_cost_BC = min(intersections_cost)
+                # stop_C = True
+                #update froniter B and C so that they focus on A
+                frontier_B_temp = PriorityQueue()
+                frontier_C_temp = PriorityQueue()
+                for node in frontier_B:
+                    cost = branch_B[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_B_temp.append((cost,node[-1]))
+                frontier_B = frontier_B_temp
+                for node in frontier_C:
+                    cost = branch_C[node[-1]][0] + heuristic(graph,node[-1],goals[0])
+                    frontier_C_temp.append((cost,node[-1]))
+                frontier_C = frontier_C_temp
+            if explored_C.intersection(explored_A) and explored_C.intersection(explored_C):
+                #which means the optimal solution for AB and AC have been already calculated
+                stop_C = True
+            
+            else:
+                if current_node_C == goals[2]:
+                    current_cost_C = 0.0
+                else:
+                    current_cost_C = branch_C[current_node_C][0]
+                
+                
+
+                
+                
+                # print(graph[current_node])
+                for neighbour in sorted(graph.neighbors(current_node_C)): #the queue is structured as (priority, counter,node)
+                    neighbour_cost = graph.get_edge_weight(current_node_C,neighbour)
+                    cost_total_C = current_cost_C + neighbour_cost
+                    if intersection_node_AC is not None:
+                        h = heuristic(graph,neighbour,goals[1])
+                    elif intersection_node_BC is not None:
+                        h = heuristic(graph,neighbour,goals[0])
+                    else:
+                        h2 = heuristic(graph,neighbour,goals[1])
+                        h1 = heuristic(graph,neighbour,goals[0])
+                        if h1 >= h2:
+                            h = h2
+                        else:
+                            h = h1
+                        # h = h1 + h2
+                    f = cost_total_C + h
+                    if neighbour not in frontier_C and neighbour not in explored_C:
+                        frontier_C.append((f, neighbour))
+                        branch_C [neighbour] = (cost_total_C, current_node_C) #add the parent branch
+                        
+                    elif neighbour in frontier_C and cost_total_C < branch_C[neighbour][0]:
+                        #how to remove while not knowing the counter number?
+                        frontier_C.append((f,neighbour))#is it okay to add without removing
+                        branch_C [neighbour] = (cost_total_C, current_node_C) #add the parent branch  
+
+
+        if (intersection_node_AC is not None and intersection_node_AB) or (intersection_node_AC is not None and intersection_node_BC)  or  (intersection_node_BC is not None and intersection_node_AB):
+            found_path = True    
+            break
+        else:
+            #continue exploring with least cost node 
+            costs = []
+            if stop_A:
+                costs.append(math.inf)
+            else:
+                costs.append(frontier_A.top()[0])
+            if stop_B:
+                costs.append(math.inf)
+            else:
+                costs.append(frontier_B.top()[0])
+            if stop_C:
+                costs.append(math.inf)
+            else:
+                costs.append(frontier_C.top()[0])
+            
+            # print(costs)
+            branch2search = costs.index(min(costs))
+    
+    if found_path:
+        # print("soluiton has been found")
+        path = []
+        
+
+        #There are 3 possible combination of paths: ABC=CBA= AB + BC , and ACB=BCA = AC + CB and BAC=CAB = BA + AC 
+        
+        if intersection_node_BC is not None and intersection_node_AB == 0: #ABC=CBA
+            path_AB = find_path_bidir(goals[0],goals[1],intersection_node_AB,branch_A,branch_B)
+            path += path_AB[:-1] #B will be included next 
+            path_BC = find_path_bidir(goals[1],goals[2],intersection_node_BC,branch_B,branch_C)
+            path += path_BC
+        elif intersection_node_AC is not None and intersection_node_BC: # best path is ACB=BCA
+            path_AC = find_path_bidir(goals[0],goals[2],intersection_node_AC,branch_A,branch_C)
+            path += path_AC[:-1] # C will be inculded next
+            path_CB = find_path_bidir(goals[2],goals[1],intersection_node_BC,branch_C,branch_B)
+            path += path_CB
+        elif intersection_node_AC is not None and intersection_node_AB: #best path is BAC=CAB 
+            path_BA = find_path_bidir(goals[1],goals[0],intersection_node_AB,branch_B,branch_A)
+            path += path_BA[:-1]     
+            path_AC = find_path_bidir(goals[0],goals[2],intersection_node_AC,branch_A,branch_C)
+            path += path_AC
+        # print(" tri-A*: goals {} and path: {}".format(goals,path))
+        return path
 
 def return_your_name():
     """Return your name from this function"""
