@@ -182,36 +182,26 @@ def Gibbs_sampler(bayes_net, initial_state):
     #choose a state to change at random
     chosen_variable = np.random.choice(variable2choose) 
     if variables[chosen_variable] == 'A':
-        total_pro = 0
+        normalizer = 0
         prob=[]
-        for skill in team_skills:
-            p_A_skill = bayes_net.get_cpds('A').values[skill]      
-            p_AvB_bar_A_B = bayes_net.get_cpds("AvB").values[current_state_dict['AvB']][skill][current_state_dict['B']]
-            p_CvA_bar_C_A = bayes_net.get_cpds("CvA").values[current_state_dict['CvA']][current_state_dict['C']][skill]
-            total_pro += p_A_skill*p_AvB_bar_A_B*p_CvA_bar_C_A
             
         #now calculate unormalized probaility for each skill for a, then normailize
         for skill in team_skills:
             p_A_skill = bayes_net.get_cpds('A').values[skill]      
             p_AvB_bar_A_B = bayes_net.get_cpds("AvB").values[current_state_dict['AvB']][skill][current_state_dict['B']]
             p_CvA_bar_C_A = bayes_net.get_cpds("CvA").values[current_state_dict['CvA']][current_state_dict['C']][skill]
-            p= p_A_skill*p_AvB_bar_A_B*p_CvA_bar_C_A
-            #normalize
-            p = p/total_pro
+            p= p_A_skill*p_AvB_bar_A_B*p_CvA_bar_C_A 
             prob.append(p)
+            normalizer += p
+        prob = [p/normalizer for p in prob]
             
         current_state_dict['A']= np.random.choice(team_skills,1,p=prob)[0]
             
             
     elif  variables[chosen_variable] == 'B':
-        total_pro = 0
+        normalizer = 0
         prob=[]
-        for skill in team_skills:
-            p_B_skill = bayes_net.get_cpds('B').values[skill]      
-            p_AvB_bar_A_B = bayes_net.get_cpds("AvB").values[current_state_dict['AvB']][current_state_dict['A']][skill]
-            p_BvC_bar_B_C = bayes_net.get_cpds("BvC").values[current_state_dict['BvC']][skill][current_state_dict['C']]
-            total_pro += p_B_skill*p_AvB_bar_A_B*p_BvC_bar_B_C
-            
+        
         #now calculate unormalized probaility for each skill for a, then normailize
         for skill in team_skills:
             p_B_skill = bayes_net.get_cpds('B').values[skill]      
@@ -219,40 +209,33 @@ def Gibbs_sampler(bayes_net, initial_state):
             p_BvC_bar_B_C = bayes_net.get_cpds("BvC").values[current_state_dict['BvC']][skill][current_state_dict['C']]
             p = p_B_skill*p_AvB_bar_A_B*p_BvC_bar_B_C
             #normalize
-            p = p/total_pro
             prob.append(p)
-            
+            normalizer += p
+        prob = [p/normalizer for p in prob]
+        
         current_state_dict['B']= np.random.choice(team_skills,1,p=prob)[0]
             
     elif  variables[chosen_variable] == 'C':
-        total_pro = 0
+        normalizer = 0
         prob=[]
         for skill in team_skills:
             p_C_skill = bayes_net.get_cpds('C').values[skill]      
             p_BvC_bar_B_C = bayes_net.get_cpds("BvC").values[current_state_dict['BvC']][current_state_dict['B']][skill]
             p_CvA_bar_C_A = bayes_net.get_cpds("CvA").values[current_state_dict['CvA']][skill][current_state_dict['A']]
-            total_pro += p_C_skill*p_BvC_bar_B_C*p_CvA_bar_C_A
-        
-        #now calculate unormalized probaility for each skill for a, then normailize
-        for skill in team_skills:
-            p_C_skill = bayes_net.get_cpds('C').values[skill]      
-            p_BvC_bar_B_C = bayes_net.get_cpds("BvC").values[current_state_dict['BvC']][current_state_dict['B']][skill]
-            p_BvC_bar_C_A = bayes_net.get_cpds("CvA").values[current_state_dict['CvA']][skill][current_state_dict['A']]
             p= p_C_skill*p_BvC_bar_B_C*p_CvA_bar_C_A
-            #normalize
-            p = p/total_pro
             prob.append(p)
-        
+            normalizer += p
+        prob = [p/normalizer for p in prob]
         current_state_dict['C']= np.random.choice(team_skills,1,p=prob)[0]
     elif  variables[chosen_variable] == 'BvC':
         prob = []
         #this can be pulled out from the table directed as BvC only directly depends on B and C
         for result in match_result:
-            p = bayes_net.get_cpds('BvC').values[current_state_dict['BvC']][current_state_dict['B']][current_state_dict['C']]
+            p = bayes_net.get_cpds('BvC').values[result][current_state_dict['B']][current_state_dict['C']]
             #no need to normalize as the total_prob is 1
             prob.append(p)
             
-        current_state_dict['A']= np.random.choice(match_result,1,p=prob)[0]
+        current_state_dict['BvC']= np.random.choice(match_result,1,p=prob)[0]
             
             
     #extract the sample in a list
@@ -260,6 +243,25 @@ def Gibbs_sampler(bayes_net, initial_state):
         
     sample = tuple(sample)    
     return sample
+
+def test_Gibbes(bayes_net,sample,n):
+    B_beats_C = 0.0
+    C_beats_B = 0.0
+    draw =0.0
+    for i in range(n):
+        sample = Gibbs_sampler(bayes_net=bayes_net,initial_state=sample)
+        if sample[4]==0:
+            B_beats_C +=1.
+        elif sample[4]==1:
+            C_beats_B +=1.
+        elif sample[4]==2:
+            draw += 1.0
+    
+    return [B_beats_C/n,C_beats_B/n,draw/n]
+            
+    
+    
+        
 
 
 def MH_sampler(bayes_net, initial_state):
@@ -269,12 +271,92 @@ def MH_sampler(bayes_net, initial_state):
     index 3-5: represent results of matches AvB, BvC, CvA (values lie in [0,2] inclusive)    
     Returns the new state sampled from the probability distribution as a tuple of length 6. 
     """
-    
+    variables = ['A','B','C','AvB','BvC','CvA'] # the evidence are 'AvB' and 'CvA' -->fixed
+    #sample = [] #represent the value for each variable in the current sample
+    current_sample_dict = {}
+    old_sample_dict = {}
+    team_skills = [0,1,2,3]
+    match_result =[0,1,2]
+    variable2choose = [0,1,2,4] # 'AvB' and 'CvA' are fixed
 
-    sample = tuple(initial_state)    
-    # TODO: finish this function
-    raise NotImplementedError    
+    #check it is the first sample
+    if initial_state[0] is None:
+        for i in range(len(initial_state)): #initial_state must be of a length of 6    
+            if i == 3:
+                current_sample_dict[variables[i]] = 0 # A beats B
+            elif i==5:
+                current_sample_dict[variables[i]] = 2 # A draws with C (fixed)  
+            elif i == 4:    
+                current_sample_dict[variables[i]] = np.random.choice(match_result) #BvC is choicen randomly 
+            else:
+                 current_sample_dict[variables[i]] = np.random.choice(team_skills) #A,B, and C are choicen randomly  
+        sample = [current_sample_dict['A'],current_sample_dict['B'],current_sample_dict['C'],current_sample_dict['AvB'],current_sample_dict['BvC'],current_sample_dict['CvA']]
+        
+        sample = tuple(sample)    
+        return sample 
+    
+    #compute the propabiliy the of the old sample 
+    for i in range(len(initial_state)):
+        old_sample_dict[variables[i]]= initial_state[i]
+    
+    p_A = bayes_net.get_cpds('A').values[old_sample_dict['A']] 
+    p_B = bayes_net.get_cpds('B').values[old_sample_dict['B']] 
+    p_C = bayes_net.get_cpds('C').values[old_sample_dict['C']] 
+    p_AvB_bar_A_B = bayes_net.get_cpds("AvB").values[old_sample_dict['AvB']][old_sample_dict['A']][old_sample_dict['B']]
+    p_BvC_bar_A_C = bayes_net.get_cpds("BvC").values[old_sample_dict['BvC']][old_sample_dict['B']][old_sample_dict['C']]
+    p_CvA_bar_C_A = bayes_net.get_cpds("CvA").values[old_sample_dict['CvA']][old_sample_dict['C']][old_sample_dict['A']] 
+    joint_old = p_A*p_B*p_C*p_AvB_bar_A_B*p_BvC_bar_A_C*p_CvA_bar_C_A
+    
+    #create an independent second sample 
+    for i in range(len(initial_state)): #initial_state must be of a length of 6    
+            if i == 3:
+                current_sample_dict[variables[i]] = 0 # A beats B
+            elif i==5:
+                current_sample_dict[variables[i]] = 2 # A draws with C (fixed)  
+            elif i == 4:    
+                current_sample_dict[variables[i]] = np.random.choice(match_result) #BvC is choicen randomly 
+            else:
+                 current_sample_dict[variables[i]] = np.random.choice(team_skills) #A,B, and C are choicen randomly  
+    #calculate the current sample 
+    p_A = bayes_net.get_cpds('A').values[current_sample_dict['A']] 
+    p_B = bayes_net.get_cpds('B').values[current_sample_dict['B']] 
+    p_C = bayes_net.get_cpds('C').values[current_sample_dict['C']] 
+    p_AvB_bar_A_B = bayes_net.get_cpds("AvB").values[current_sample_dict['AvB']][current_sample_dict['A']][current_sample_dict['B']]
+    p_BvC_bar_A_C = bayes_net.get_cpds("BvC").values[current_sample_dict['BvC']][current_sample_dict['B']][current_sample_dict['C']]
+    p_CvA_bar_C_A = bayes_net.get_cpds("CvA").values[current_sample_dict['CvA']][current_sample_dict['C']][current_sample_dict['A']] 
+    joint_current= p_A*p_B*p_C*p_AvB_bar_A_B*p_BvC_bar_A_C*p_CvA_bar_C_A
+    
+    alpha = min(1,joint_current/joint_old)
+    
+    #if the new sample has a joint probability more than the old, it will be chosen with probabiliyt of 1
+    #otherwise, it will be only accepted with probability of alpha
+    chosen_sample = np.random.choice(['new','old'],1,p=[alpha,1-alpha])
+    
+    if chosen_sample == 'new':
+        sample = [current_sample_dict['A'],current_sample_dict['B'],current_sample_dict['C'],current_sample_dict['AvB'],current_sample_dict['BvC'],current_sample_dict['CvA']]
+        sample = tuple(sample)
+    else:
+        sample = [old_sample_dict['A'],old_sample_dict['B'],old_sample_dict['C'],old_sample_dict['AvB'],old_sample_dict['BvC'],old_sample_dict['CvA']]
+        sample = tuple(sample)
+    
     return sample
+        
+def test_MH(bayes_net,sample,n):
+    B_beats_C = 0.0
+    C_beats_B = 0.0
+    draw =0.0
+    for i in range(n):
+        sample = MH_sampler(bayes_net=bayes_net,initial_state=sample)
+        if sample[4]==0:
+            B_beats_C +=1.
+        elif sample[4]==1:
+            C_beats_B +=1.
+        elif sample[4]==2:
+            draw += 1.0
+    
+    return [B_beats_C/n,C_beats_B/n,draw/n]
+                         
+    
 
 
 def compare_sampling(bayes_net, initial_state):
