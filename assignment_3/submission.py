@@ -86,7 +86,7 @@ def get_temperature_prob(bayes_net):
     alarm sounds and neither the gauge
     nor alarm is faulty."""
     solver = VariableElimination(bayes_net)
-    conditional_prob = solver.query(variables=['temperature'],evidence={'faulty alarm':0,'faulty gauge':0}, joint=False)
+    conditional_prob = solver.query(variables=['temperature'],evidence={'alarm': 1,'faulty alarm':0,'faulty gauge':0}, joint=False)
     temp_prob = conditional_prob['temperature'].values
     return temp_prob[1]
 
@@ -277,7 +277,7 @@ def MH_sampler(bayes_net, initial_state):
     old_sample_dict = {}
     team_skills = [0,1,2,3]
     match_result =[0,1,2]
-    variable2choose = [0,1,2,4] # 'AvB' and 'CvA' are fixed
+    
 
     #check it is the first sample
     if initial_state[0] is None:
@@ -364,24 +364,84 @@ def compare_sampling(bayes_net, initial_state):
     Gibbs_count = 0
     MH_count = 0
     MH_rejection_count = 0
-    Gibbs_convergence = [0,0,0] # posterior distribution of the BvC match as produced by Gibbs 
-    MH_convergence = [0,0,0] # posterior distribution of the BvC match as produced by MH
-    # TODO: finish this function
-    raise NotImplementedError        
+    
+    delta = 0.0001
+    max_iteration = 30000
+    N = 100 #check for delta every N
+    #initalize random posterior
+    Gibbs_convergence = [0.33,0.33,0.33] # posterior distribution of the BvC match as produced by Gibbs 
+    MH_convergence = [0.33,0.33,0.33] # posterior distribution of the BvC match as produced by MH
+    
+    old_posterior_gibbs =[0,0,0]
+    old_posterior_MH =[0,0,0]
+    
+    #test gibbs
+    sample_gibbs = initial_state
+    B_beats_C = 0.0
+    C_beats_B = 0.0
+    draw =0.0
+    while Gibbs_count <max_iteration:
+        Gibbs_count += 1
+        sample_gibbs = MH_sampler(bayes_net=bayes_net,initial_state=sample_gibbs)
+        if sample_gibbs[4]==0:
+            B_beats_C +=1.
+        elif sample_gibbs[4]==1:
+            C_beats_B +=1.
+        elif sample_gibbs[4]==2:
+            draw += 1.0
+        if (Gibbs_count%N)==0:
+            old_posterior_gibbs = Gibbs_convergence
+            Gibbs_convergence = [B_beats_C/Gibbs_count,C_beats_B/Gibbs_count,draw/Gibbs_count]
+            diff_avg =  (abs(old_posterior_gibbs[0]-Gibbs_convergence[0]) + abs(old_posterior_gibbs[1]-Gibbs_convergence[1]) + abs(old_posterior_gibbs[2]-Gibbs_convergence[2]))/3
+            if diff_avg < delta:
+                break
+    
+    #test MH
+    sample_MH = initial_state
+    B_beats_C = 0.0
+    C_beats_B = 0.0
+    draw =0.0
+    
+    while MH_count < max_iteration:
+        MH_count += 1
+        old_sample_HM = sample_MH
+        sample_MH = MH_sampler(bayes_net=bayes_net,initial_state=sample_MH)
+        if old_sample_HM == sample_MH:
+            MH_rejection_count+=1
+        if sample_MH[4]==0:
+            B_beats_C +=1.
+        elif sample_MH[4]==1:
+            C_beats_B +=1.
+        elif sample_MH[4]==2:
+            draw += 1.0
+        if (MH_count%N)==0:
+            old_posterior_MH = MH_convergence
+            MH_convergence = [B_beats_C/MH_count,C_beats_B/MH_count,draw/MH_count]
+            diff_avg = (abs(old_posterior_MH[0]-MH_convergence[0])+ abs(old_posterior_MH[1]-MH_convergence[1]) + abs(old_posterior_MH[2]-MH_convergence[2]))/3
+            if diff_avg < delta:
+                break
+    #factor = Gibbs_count/MH_count
+    #print("factor: ", Gibbs_count/MH_count)   
     return Gibbs_convergence, MH_convergence, Gibbs_count, MH_count, MH_rejection_count
 
+# def average_factor(bayes_net,initial_state,N):
+#     factor_sum = 0.0
+#     for i in range(N):
+#         sample = initial_state
+#         Gibbs_convergence, MH_convergence, Gibbs_count, MH_count, MH_rejection_count,factor = compare_sampling(bayes_net,sample)
+#         factor_sum += factor
+    
+#     return factor_sum/N
 
 def sampling_question():
     """Question about sampling performance."""
-    # TODO: assign value to choice and factor
-    raise NotImplementedError
-    choice = 2
+    choice = 1
     options = ['Gibbs','Metropolis-Hastings']
-    factor = 0
+    factor = 1.1
     return options[choice], factor
 
 
 def return_your_name():
     """Return your name from this function"""
     # TODO: finish this function
-    raise NotImplementedError
+    return "Ali Alrasheed"
