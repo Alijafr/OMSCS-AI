@@ -322,7 +322,7 @@ class VectorizationWarmUpTests(unittest.TestCase):
         start_time = time.time() * 1000
         self.vector.vectorized_loops(self.data)
         end_time = time.time() * 1000
-
+        print(end_time - start_time)
         assert (end_time - start_time) <= 0.09
 
     def test_vectorized_slice_time(self):
@@ -335,7 +335,7 @@ class VectorizationWarmUpTests(unittest.TestCase):
         start_time = time.time() * 1000
         self.vector.vectorized_slice(self.data)
         end_time = time.time() * 1000
-
+        print(end_time - start_time)
         assert (end_time - start_time) <= 0.07
 
     def test_vectorized_flatten_time(self):
@@ -347,7 +347,7 @@ class VectorizationWarmUpTests(unittest.TestCase):
         start_time = time.time() * 1000
         self.vector.vectorized_flatten(self.data)
         end_time = time.time()  * 1000
-
+        print(end_time - start_time)
         assert (end_time - start_time) <= 15.0
 
 class NameTests(unittest.TestCase):

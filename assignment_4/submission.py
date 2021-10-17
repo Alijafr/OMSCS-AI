@@ -76,11 +76,22 @@ def build_decision_tree():
         The root node of the decision tree.
     """
 
-    decision_tree_root = None
-
-    # TODO: finish this.
-    raise NotImplemented()
-
+    decision_tree_root = DecisionNode(None, None, lambda feature : feature[0] == 0)
+    decision_tree_root.left = DecisionNode(None, None,  lambda feature : feature[1] == 0)
+    decision_tree_root.right = DecisionNode(None, None, None, 1)
+    
+    decision_tree_root.left.left =DecisionNode(None, None, lambda feature : feature[3] == 0)
+    decision_tree_root.left.right =DecisionNode(None, None, lambda feature : feature[2] == 0)
+    
+    decision_tree_root.left.left.left =DecisionNode(None, None, None,  0)
+    decision_tree_root.left.left.right =DecisionNode(None, None, None,  1)
+    
+    decision_tree_root.left.right.right =DecisionNode(None, None, None,  0)
+    decision_tree_root.left.right.left =DecisionNode(None, None, lambda feature : feature[3] == 0)
+    
+    
+    decision_tree_root.left.right.left.left =DecisionNode(None, None, None,  1)
+    decision_tree_root.left.right.left.right =DecisionNode(None, None, None,  0)
     return decision_tree_root
 
 
@@ -349,8 +360,8 @@ class Vectorization:
             Numpy array of data.
         """
 
-        # TODO: finish this.
-        raise NotImplemented()
+        #return np.multiply(data,data)+data
+        return data*data+data
 
     def non_vectorized_slice(self, data):
         """Find row with max sum using loops.
@@ -384,9 +395,10 @@ class Vectorization:
         Returns:
             Tuple (Max row sum, index of row with max sum)
         """
-
+        sum_rows = np.sum(data[:100],axis=1)
+        max_row = np.max(sum_rows)
         # TODO: finish this.
-        raise NotImplemented()
+        return max_row , np.where(sum_rows == max_row)[0][0]
 
     def non_vectorized_flatten(self, data):
         """Display occurrences of positive numbers using loops.
@@ -421,10 +433,15 @@ class Vectorization:
             List of occurrences [(integer, number of occurrences), ...]
         """
 
-        # TODO: finish this.
-        raise NotImplemented()
-
+        flattened = np.hstack(data)
+        flattened = flattened[flattened>0]
+        unique, counts = np.unique(flattened, return_counts=True)
+        frequencies = np.stack((unique,counts),axis=1)
+        unique_dict2 = dict(frequencies)
+        
+        return unique_dict2.items()
+        
+        
 def return_your_name():
     # return your name
-    # TODO: finish this
-    raise NotImplemented()
+    return "Ali Alrasheed"
