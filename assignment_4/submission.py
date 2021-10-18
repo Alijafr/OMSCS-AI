@@ -77,21 +77,18 @@ def build_decision_tree():
     """
 
     decision_tree_root = DecisionNode(None, None, lambda feature : feature[0] == 0)
-    decision_tree_root.left = DecisionNode(None, None,  lambda feature : feature[1] == 0)
+    decision_tree_root.left = DecisionNode(None, None,  lambda feature : feature[3] == 0)
     decision_tree_root.right = DecisionNode(None, None, None, 1)
     
-    decision_tree_root.left.left =DecisionNode(None, None, lambda feature : feature[3] == 0)
+    decision_tree_root.left.left =DecisionNode(None, None, lambda feature : feature[2] == 0)
     decision_tree_root.left.right =DecisionNode(None, None, lambda feature : feature[2] == 0)
     
-    decision_tree_root.left.left.left =DecisionNode(None, None, None,  0)
-    decision_tree_root.left.left.right =DecisionNode(None, None, None,  1)
+    decision_tree_root.left.left.left =DecisionNode(None, None, None,  1)
+    decision_tree_root.left.left.right =DecisionNode(None, None, None,  0)
     
-    decision_tree_root.left.right.right =DecisionNode(None, None, None,  0)
-    decision_tree_root.left.right.left =DecisionNode(None, None, lambda feature : feature[3] == 0)
+    decision_tree_root.left.right.right =DecisionNode(None, None, None,  1)
+    decision_tree_root.left.right.left =DecisionNode(None, None, None, 0)
     
-    
-    decision_tree_root.left.right.left.left =DecisionNode(None, None, None,  1)
-    decision_tree_root.left.right.left.right =DecisionNode(None, None, None,  0)
     return decision_tree_root
 
 
@@ -106,9 +103,16 @@ def confusion_matrix(classifier_output, true_labels):
     Returns:
         A two dimensional array representing the confusion matrix.
     """
-
-    # TODO: finish this.
-    raise NotImplemented()
+    classifier_output = np.array(classifier_output)
+    true_labels = np.array(true_labels)
+    true_pos = len(classifier_output[(classifier_output==true_labels) &(true_labels==1)])
+    true_neg = len(classifier_output[(classifier_output==true_labels) & (true_labels==0)])
+    false_neg = len(classifier_output[(classifier_output!=true_labels) & (true_labels==1)])
+    false_pos = len(classifier_output[(classifier_output!=true_labels) & (true_labels==0)])
+    
+    return [[true_pos,false_neg],[false_pos,true_neg]]
+    
+    
 
 
 def precision(classifier_output, true_labels):
@@ -121,9 +125,15 @@ def precision(classifier_output, true_labels):
     Returns:
         The precision of the classifier output.
     """
-
-    # TODO: finish this.
-    raise NotImplemented()
+    classifier_output = np.array(classifier_output)
+    true_labels = np.array(true_labels)
+    true_pos = len(classifier_output[(classifier_output==true_labels) &(true_labels==1)])
+    false_pos = len(classifier_output[(classifier_output!=true_labels) & (true_labels==0)])
+    
+    return true_pos/(true_pos+false_pos)
+    
+    
+    
 
 
 def recall(classifier_output, true_labels):
@@ -136,9 +146,14 @@ def recall(classifier_output, true_labels):
     Returns:
         The recall of the classifier output.
     """
+    classifier_output = np.array(classifier_output)
+    true_labels = np.array(true_labels)
+    true_pos = len(classifier_output[(classifier_output==true_labels) &(true_labels==1)])
+    false_neg = len(classifier_output[(classifier_output!=true_labels) & (true_labels==1)])
+    
+    return true_pos/(true_pos+false_neg)
 
-    # TODO: finish this.
-    raise NotImplemented()
+    
 
 
 def accuracy(classifier_output, true_labels):
@@ -151,9 +166,14 @@ def accuracy(classifier_output, true_labels):
     Returns:
         The accuracy of the classifier output.
     """
-
-    # TODO: finish this.
-    raise NotImplemented()
+    classifier_output = np.array(classifier_output)
+    true_labels = np.array(true_labels)
+    true_pos = len(classifier_output[(classifier_output==true_labels) &(true_labels==1)])
+    true_neg = len(classifier_output[(classifier_output==true_labels) & (true_labels==0)])
+    
+    
+    return (true_pos+ true_neg)/len(true_labels)
+    
 
 
 def gini_impurity(class_vector):
@@ -169,7 +189,15 @@ def gini_impurity(class_vector):
     Returns:
         Floating point number representing the gini impurity.
     """
-    raise NotImplemented()
+    class_vector = np.array(class_vector)
+    num_clases = np.unique(class_vector)
+    gini = 0
+    for class_ in num_clases:
+        p_class_ = len(class_vector[class_vector==class_])/len(class_vector)
+        gini += p_class_**2
+        
+    
+    return 1- gini
 
 
 def gini_gain(previous_classes, current_classes):
@@ -181,8 +209,16 @@ def gini_gain(previous_classes, current_classes):
     Returns:
         Floating point number representing the information gain.
     """
-    raise NotImplemented()
-
+    gini_index_pre = gini_impurity(previous_classes)
+    
+    gini_child = 0
+    for classes in current_classes:
+        weight = len(classes)/len(previous_classes)
+        gini = gini_impurity(classes)
+        gini_child += weight*gini
+    
+    
+    return gini_index_pre -gini_child
 
 class DecisionTree:
     """Class for automatic tree-building and classification."""

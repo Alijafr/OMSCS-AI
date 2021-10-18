@@ -183,7 +183,7 @@ class DecisionTreePart2Tests(unittest.TestCase):
 
         gini_gain = dt.gini_gain([1, 1, 1, 0, 0, 0],
                                  [[1, 1, 0], [1, 0, 0]])
-
+        print(round(gini_gain, 3))
         assert 0.056 == round(gini_gain, 3)
 
     def test_gini_gain_restaurant_patrons(self):
