@@ -251,10 +251,48 @@ class DecisionTree:
         Returns:
             Root node of decision tree.
         """
-
-        # TODO: finish this.
-        raise NotImplemented()
-
+        max_gini = float('-inf')
+        left_split = None
+        right_split = None
+        best_threshold = None
+        best_feature = None
+        num_features = len(features[0])
+        classes = np.expand_dims(classes,axis=1) #classes comes as (m,) -- > (m,1)
+        dataset = np.concatenate((features,classes),axis=1)
+        if depth <= self.depth_limit:
+            for i in range(num_features):
+                #find the throshold: unique? equally spaced? mean? madian?
+                #unique is very slow btw
+                thresholds = np.unique(features[:,i])
+                for threshold in thresholds:
+                    #split the feaures left and right
+                    left = dataset[dataset[:,i]<= threshold]
+                    right = dataset[dataset[:,i]<= threshold]
+                    split_features = []
+                    split_features.append(left[:,-1])
+                    split_features.append(right[:,-1])
+                    current_gini = gini_gain(classes,split_features)
+                    if current_gini > max_gini:
+                        max_gini = current_gini
+                        left_split= left
+                        right_split = right
+                        best_threshold = threshold 
+                        best_feature = i
+            if max_gini> 0 : #otherwise we are trying to split a pure node (no inofromation gain)
+                #split the nodes 
+                root_left = self.__build_tree__(left_split[:,:-1],left_split[:,-1],depth+1)
+                #right node
+                root_right = self.__build_tree__(right_split[:,:-1],right_split[:,-1],depth+1)
+                
+                return DecisionNode(root_right,root_left,lambda feature : feature[i]<= best_threshold)
+        
+        #return a leaf node (the class will be the one with height number)
+        class_type ,counts = np.unique(classes,return_counts=True)
+        leaf_value = class_type[counts == counts.max()]
+        
+        return DecisionNode(None,None,None,leaf_value)
+        
+    
     def classify(self, features):
         """Use the fitted tree to classify a list of example features.
         Args:
@@ -262,11 +300,11 @@ class DecisionTree:
         Return:
             A list of class labels.
         """
-
         class_labels = []
-
-        # TODO: finish this.
-        raise NotImplemented()
+        for i in range(len(features)):
+            predicted_class = self.root.decide(features[i])
+            class_labels.append(predicted_class)
+            
         return class_labels
 
 

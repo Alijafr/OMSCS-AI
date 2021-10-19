@@ -222,7 +222,6 @@ class DecisionTreePart2Tests(unittest.TestCase):
         tree = dt.DecisionTree()
         tree.fit(self.train_features, self.train_classes)
         output = tree.classify(self.train_features)
-
         assert (output == self.train_classes).all()
 
     def test_k_folds_test_set_count(self):
