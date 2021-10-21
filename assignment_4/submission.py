@@ -251,7 +251,12 @@ class DecisionTree:
         Returns:
             Root node of decision tree.
         """
-        max_gini = float('-inf')
+        if np.all(classes[0]):
+            class_type ,counts = np.unique(classes,return_counts=True)
+            leaf_value = class_type[counts == counts.max()]
+            return DecisionNode(None,None,None,leaf_value)
+            
+        max_gini = -float('inf')
         left_split = None
         left_classes = None
         right_split = None
@@ -265,32 +270,34 @@ class DecisionTree:
             for i in range(num_features):
                 #find the throshold: unique? equally spaced? mean? madian?
                 #unique is very slow btw
-                thresholds = np.unique(features[:,i])
+                #thresholds = np.unique(features[:,i])
+                thresholds = np.linspace(np.min(features[:,i]),np.max(features[:,i]),num=10)
                 for threshold in thresholds:
                     #split the feaures left and right
                     left = features[features[:,i]<= threshold]
                     l_classes = classes[features[:,i]<= threshold]
-                    right = features[features[:,i]< threshold]
-                    r_classes = classes[features[:,i]< threshold]
-                    split_features = []
-                    split_features.append(l_classes)
-                    split_features.append(r_classes)
-                    current_gini = gini_gain(classes,split_features)
-                    if current_gini > max_gini:
-                        max_gini = current_gini
-                        left_split= left
-                        left_classes =l_classes 
-                        right_split = right
-                        right_classes = r_classes
-                        best_threshold = threshold 
-                        best_feature = i
+                    right = features[features[:,i]> threshold]
+                    r_classes = classes[features[:,i]> threshold]
+                    if len(left)>0 and len(right)> 0:
+                        split_features = []
+                        split_features.append(l_classes)
+                        split_features.append(r_classes)
+                        current_gini = gini_gain(classes,split_features)
+                        if current_gini > max_gini:
+                            max_gini = current_gini
+                            left_split= left
+                            left_classes =l_classes 
+                            right_split = right
+                            right_classes = r_classes
+                            best_threshold = threshold 
+                            best_feature = i
             if max_gini> 0 : #otherwise we are trying to split a pure node (no inofromation gain)
                 #split the nodes 
                 root_left = self.__build_tree__(left_split,left_classes,depth+1)
                 #right node
                 root_right = self.__build_tree__(right_split,right_classes,depth+1)
                 
-                return DecisionNode(root_left,root_right,lambda feature : feature[i]<= best_threshold)
+                return DecisionNode(root_left,root_right,lambda feature : feature[best_feature]<= best_threshold)
         
         #return a leaf node (the class will be the one with height number)
         class_type ,counts = np.unique(classes,return_counts=True)
@@ -306,10 +313,10 @@ class DecisionTree:
         Return:
             A list of class labels.
         """
-        class_labels = []
+        class_labels = np.array([])
         for i in range(len(features)):
             predicted_class = self.root.decide(features[i])
-            class_labels.append(predicted_class)
+            class_labels = np.append(class_labels,predicted_class)
             
         return class_labels
 
