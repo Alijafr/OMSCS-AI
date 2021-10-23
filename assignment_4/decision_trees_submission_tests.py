@@ -238,7 +238,8 @@ class DecisionTreePart2Tests(unittest.TestCase):
 
         for fold in ten_folds:
             training_set, test_set = fold
-
+            print(len(test_set[0]))
+            print( test_set_count)
             assert len(test_set[0]) == test_set_count
 
     def test_k_folds_training_set_count(self):
@@ -252,10 +253,8 @@ class DecisionTreePart2Tests(unittest.TestCase):
         k = 10
         training_set_count = example_count - (example_count // k)
         ten_folds = dt.generate_k_folds(self.dataset, k)
-
         for fold in ten_folds:
             training_set, test_set = fold
-
             assert len(training_set[0]) == training_set_count
 
 

@@ -334,9 +334,27 @@ def generate_k_folds(dataset, k):
         => Each fold is a tuple of sets.
         => Each Set is a tuple of numpy arrays.
     """
-
-    # TODO: finish this.
-    raise NotImplemented()
+    folds = []
+    features, classes = dataset
+    classes = np.expand_dims(classes,axis=1) #classes comes as (m,) -- > (m,1)
+    dataset = np.concatenate((features,classes),axis=1)
+    num_examples , _ = np.shape(dataset)
+    sets_size = num_examples//k
+    for i in range(k):
+        np.random.shuffle(dataset)
+        temp_dataset = dataset
+        random_sample = np.random.randint(k-1)
+        temp_dataset = np.delete(temp_dataset,np.linspace(random_sample*sets_size,(random_sample+1)*sets_size,num=sets_size,endpoint=False).astype(int),axis=0)
+        training_features = temp_dataset[:,:-1]
+        training_classes = temp_dataset[:,-1]
+        
+        testing_features = temp_dataset[random_sample*sets_size:(random_sample+1)*sets_size,:-1]
+        testing_classes = temp_dataset[random_sample*sets_size:(random_sample+1)*sets_size,-1]
+        fold = ((training_features,training_classes),(testing_features,testing_classes))
+        folds.append(fold)
+        
+    
+    return folds
 
 
 class RandomForest:
@@ -357,24 +375,50 @@ class RandomForest:
         self.depth_limit = depth_limit
         self.example_subsample_rate = example_subsample_rate
         self.attr_subsample_rate = attr_subsample_rate
+        self.tree_features = []
 
     def fit(self, features, classes):
         """Build a random forest of decision trees using Bootstrap Aggregation.
             features (m x n): m examples with n features.
             classes (m x 1): Array of Classes.
         """
-
-        # TODO: finish this.
-        raise NotImplemented()
+        for i in range(self.num_trees):
+            #subsample the data with replacement 
+            data_idx = np.random.choice(features.shape[0],int(self.example_subsample_rate*len(features)))
+            #subsample the features
+            features_idx = np.random.choice(features.shape[1],int(self.attr_subsample_rate*len(features[0])),replace=False)
+            
+            sampled_features = features[data_idx] #filter the data (rows)
+            sampled_features = sampled_features[:,features_idx] #filter the features 
+            
+            #do the same for the labels 
+            sampled_classes = classes[data_idx]
+            
+            tree = DecisionTree(self.depth_limit)
+            tree.fit(sampled_features,sampled_classes)
+            
+            self.trees.append(tree)
+            self.tree_features.append(features_idx)
+            
+            
 
     def classify(self, features):
         """Classify a list of features based on the trained random forest.
         Args:
             features (m x n): m examples with n features.
         """
-
-        # TODO: finish this.
-        raise NotImplemented()
+        class_labels = np.array([])
+        for k in range(len(features)):
+            votes = []
+            for i in range(len(self.trees)):
+                predicted_class = self.trees[i].root.decide(features[k,self.tree_features[i]])
+                votes.append(predicted_class[0])
+            
+            class_type ,counts = np.unique(votes,return_counts=True)
+            predicted_class = class_type[counts == counts.max()]
+            class_labels = np.append(class_labels,predicted_class)
+        
+        return class_labels
 
 
 class ChallengeClassifier:
