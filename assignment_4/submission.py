@@ -251,7 +251,7 @@ class DecisionTree:
         Returns:
             Root node of decision tree.
         """
-        if np.all(classes[0]):
+        if np.all(classes==classes[0]):
             class_type ,counts = np.unique(classes,return_counts=True)
             leaf_value = class_type[counts == counts.max()]
             return DecisionNode(None,None,None,leaf_value)
@@ -297,7 +297,7 @@ class DecisionTree:
                 #right node
                 root_right = self.__build_tree__(right_split,right_classes,depth+1)
                 
-                return DecisionNode(root_left,root_right,lambda feature : feature[best_feature]<= best_threshold)
+                return DecisionNode(root_left,root_right,lambda feature : feature[best_feature] <= best_threshold)
         
         #return a leaf node (the class will be the one with height number)
         class_type ,counts = np.unique(classes,return_counts=True)
@@ -424,15 +424,20 @@ class RandomForest:
 class ChallengeClassifier:
     """Challenge Classifier used on Challenge Training Data."""
 
-    def __init__(self):
+    def __init__(self, num_trees=5, depth_limit=5, example_subsample_rate=0.5,
+                 attr_subsample_rate=0.5):
         """Create challenge classifier.
         Initialize whatever parameters you may need here.
         This method will be called without parameters, therefore provide
         defaults.
         """
 
-        # TODO: finish this.
-        raise NotImplemented()
+        self.trees = []
+        self.num_trees = num_trees
+        self.depth_limit = depth_limit
+        self.example_subsample_rate = example_subsample_rate
+        self.attr_subsample_rate = attr_subsample_rate
+        self.tree_features = []
 
     def fit(self, features, classes):
         """Build the underlying tree(s).
@@ -442,8 +447,23 @@ class ChallengeClassifier:
             classes (m x 1): Array of Classes.
         """
 
-        # TODO: finish this.
-        raise NotImplemented()
+        for i in range(self.num_trees):
+            #subsample the data with replacement 
+            data_idx = np.random.choice(features.shape[0],int(self.example_subsample_rate*len(features)))
+            #subsample the features
+            features_idx = np.random.choice(features.shape[1],int(self.attr_subsample_rate*len(features[0])),replace=False)
+            
+            sampled_features = features[data_idx] #filter the data (rows)
+            sampled_features = sampled_features[:,features_idx] #filter the features 
+            
+            #do the same for the labels 
+            sampled_classes = classes[data_idx]
+            
+            tree = DecisionTree(self.depth_limit)
+            tree.fit(sampled_features,sampled_classes)
+            
+            self.trees.append(tree)
+            self.tree_features.append(features_idx)
 
     def classify(self, features):
         """Classify a list of features.
@@ -454,8 +474,18 @@ class ChallengeClassifier:
             A list of class labels.
         """
 
-        # TODO: finish this.
-        raise NotImplemented()
+        class_labels = np.array([])
+        for k in range(len(features)):
+            votes = []
+            for i in range(len(self.trees)):
+                predicted_class = self.trees[i].root.decide(features[k,self.tree_features[i]])
+                votes.append(predicted_class[0])
+            
+            class_type ,counts = np.unique(votes,return_counts=True)
+            predicted_class = class_type[counts == counts.max()]
+            class_labels = np.append(class_labels,predicted_class)
+        
+        return class_labels
 
 
 class Vectorization:
