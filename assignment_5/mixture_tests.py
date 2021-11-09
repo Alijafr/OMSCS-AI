@@ -166,6 +166,7 @@ class K_means_test(unittest.TestCase):
             ref_image = image_dir + 'k%d_%s' % (k, image_name)
             ref_values = image_to_matrix(ref_image)
             dist = image_difference(updated_values, ref_values)
+            print("dist, ", dist)
             self.assertEqual(int(dist), 0, msg=("Clustering for %d clusters"
                                                 + "produced unrealistic image segmentation.") % k)
         print_success_message()
